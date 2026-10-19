@@ -1,7 +1,10 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
-const { assetFiles, targetURL, allowedAsset, safeURL, verifyResponse, initialAudit } = require("./desktop-qa.cjs");
+const fs = require("node:fs");
+const os = require("node:os");
+const path = require("node:path");
+const { assetFiles, targetURL, allowedAsset, safeURL, verifyResponse, initialAudit, visibleBounds, assertDisjointCards, createAuditRun } = require("./desktop-qa.cjs");
 
 const target = targetURL("https://preview.example.test/prototype/");
 const request = (url, method = "GET", resourceType = "script") => ({ url, method, resourceType });
@@ -79,4 +82,51 @@ test("a new audit cannot inherit previous passed cases or counters", () => {
   assert.equal(current.status, "failed");
   assert.deepEqual(current.cases, []);
   assert.equal(current.network, null);
+});
+
+test("absent or hidden optional drawer never asks for boundingBox", async () => {
+  let boundingReads = 0;
+  const locator = { isVisible: async () => false, boundingBox: async () => { boundingReads += 1; throw new Error("Would time out"); } };
+  assert.equal(await visibleBounds(locator), null);
+  assert.equal(boundingReads, 0);
+});
+
+test("visible drawer still returns measured geometry", async () => {
+  const bounds = { x: 1018, y: 84, width: 400, height: 616 };
+  assert.deepEqual(await visibleBounds({ isVisible: async () => true, boundingBox: async () => bounds }), bounds);
+});
+
+test("missing bounds after visible check fail rather than silently skip", async () => {
+  await assert.rejects(() => visibleBounds({ isVisible: async () => true, boundingBox: async () => null }), /lost its measurable bounds/);
+});
+
+test("separated card geometry is a valid connection fixture", () => {
+  const boxes = [{ x: 30, y: 40, width: 224, height: 160 }, { x: 330, y: 40, width: 224, height: 160 }];
+  assert.deepEqual(assertDisjointCards(boxes), boxes);
+});
+
+test("overlapping cards fail before drag assertions can misdiagnose a port", () => {
+  assert.throws(() => assertDisjointCards([{ x: 30, y: 40, width: 224, height: 160 }, { x: 230, y: 80, width: 224, height: 160 }]), /overlap/);
+});
+
+test("unmeasured or missing connection fixture cannot pass geometry checks", () => {
+  assert.throws(() => assertDisjointCards([]), /at least two/);
+  assert.throws(() => assertDisjointCards([{ x: 0, y: 0, width: 0, height: 160 }, { x: 300, y: 0, width: 224, height: 160 }]), /must be measured/);
+});
+
+test("each QA attempt preserves its failed audit and copies the previous latest record", (context) => {
+  const destination = fs.mkdtempSync(path.join(os.tmpdir(), "relay-audit-test-"));
+  context.after(() => fs.rmSync(destination, { recursive: true, force: true }));
+  const original = JSON.stringify({ status: "failed", error: "original timeout", browserStatus: "failed" });
+  fs.writeFileSync(path.join(destination, "audit.json"), original);
+  const first = createAuditRun(destination);
+  assert.equal(fs.readFileSync(path.join(first.output, "prior-audit.json"), "utf8"), original);
+  first.audit.error = "fixture overlap"; first.persist();
+  const failed = fs.readFileSync(path.join(first.output, "audit.json"), "utf8");
+  const second = createAuditRun(destination);
+  assert.notEqual(first.output, second.output);
+  second.audit.status = "passed"; second.persist();
+  assert.equal(fs.readFileSync(path.join(first.output, "audit.json"), "utf8"), failed);
+  assert.equal(fs.readFileSync(path.join(second.output, "prior-audit.json"), "utf8"), failed);
+  assert.equal(JSON.parse(fs.readFileSync(path.join(destination, "audit.json"), "utf8")).artifactDirectory, second.audit.artifactDirectory);
 });

@@ -4,7 +4,7 @@ const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
 
 const repository = path.resolve(__dirname, "..");
-const destination = path.join(repository, "evidence", "workflow-dialog-v1.0");
+const destination = path.join(repository, "evidence", "workflow-dialog-qa-fix-v1");
 const sourceFiles = [
   "app.js", "index.html", "styles.css", "workbench.js", "workbench.css",
   "relay-model.js", "relay-editor.js", "relay-ui.js", "relay-ui.css", "workbench.test.cjs",
@@ -13,7 +13,7 @@ const sourceFiles = [
 const report = {
   status: "failed",
   baseCommit: "23ef629beab623674a07cad4e302bc481a78abf0",
-  revisionBaseCommit: "e7b1bab5c83ee2bb8c52e48cdfec5b94212ab36d",
+  revisionBaseCommit: "9ed527f521ee0f8f7316da1688becd9c5b7fd692",
   branch: "codex/workflow-dialog-v1.0",
   recordedAt: new Date().toISOString(),
   environment: { node: process.version, platform: process.platform, arch: process.arch },

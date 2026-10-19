@@ -45,9 +45,9 @@
 
     node prototype/verify.cjs
 
-原始 TAP、源码 SHA-256、命令退出码见 evidence/workflow-dialog-v1.0/。
+原始102项基线证据保留在 evidence/workflow-dialog-v1.0/；当前109项QA修正回归、源码SHA-256及命令退出码见 evidence/workflow-dialog-qa-fix-v1/。
 这是纯函数和 Node VM 替身测试，不是截图/真实 DOM/Console/网络观测。
 
-受控浏览器脚本与人工门禁见 DESKTOP_QA.md、VISUAL_REVIEW.md。最新浏览器尚未运行，不沿用 e7b1bab 的验收结果。正式预览需独立视觉与首次使用通过后另行授权。
+受控浏览器脚本与人工门禁见 DESKTOP_QA.md、VISUAL_REVIEW.md。班纳十七世已报告9ed527f页面分支级交互、视觉和十秒理解通过，但其17组浏览器通过使用了临时修正脚本，不是原脚本原样通过。本版QA修复已提交测试，浏览器待独立复跑；正式预览仍需另行授权。
 
 平台执行 not_run；原站整合 not_verified；online_verified=0；A2=blocked。

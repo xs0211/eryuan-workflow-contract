@@ -52,6 +52,42 @@ function initialAudit() {
   };
 }
 
+async function visibleBounds(locator) {
+  if (!await locator.isVisible()) return null;
+  const bounds = await locator.boundingBox();
+  assert(bounds, "Visible element lost its measurable bounds");
+  return bounds;
+}
+
+function assertDisjointCards(rectangles) {
+  assert(rectangles.length >= 2, "Connection fixture needs at least two cards");
+  for (const [index, bounds] of rectangles.entries()) {
+    assert([bounds.x, bounds.y, bounds.width, bounds.height].every(Number.isFinite) && bounds.width > 0 && bounds.height > 0, "Card geometry must be measured");
+    for (const other of rectangles.slice(index + 1)) {
+      const overlaps = bounds.x < other.x + other.width && bounds.x + bounds.width > other.x && bounds.y < other.y + other.height && bounds.y + bounds.height > other.y;
+      assert(!overlaps, "Connection fixture cards overlap; arrange through the UI before dragging");
+    }
+  }
+  return rectangles;
+}
+
+function createAuditRun(destination) {
+  fs.mkdirSync(destination, { recursive: true });
+  const audit = initialAudit();
+  const output = path.join(destination, crypto.randomUUID());
+  fs.mkdirSync(output);
+  const latest = path.join(destination, "audit.json");
+  if (fs.existsSync(latest)) fs.copyFileSync(latest, path.join(output, "prior-audit.json"));
+  audit.artifactDirectory = path.basename(output);
+  const persist = () => {
+    const text = JSON.stringify(audit, null, 2) + "\n";
+    fs.writeFileSync(path.join(output, "audit.json"), text);
+    fs.writeFileSync(path.join(destination, "audit.json"), text);
+  };
+  persist();
+  return { audit, output, persist };
+}
+
 async function runDesktopCases(page, audit, output, persist) {
   const readSaved = () => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), storageKey);
   const save = async () => { await page.locator("#relay-save").click(); return readSaved(); };
@@ -79,35 +115,69 @@ async function runDesktopCases(page, audit, output, persist) {
     const box = await page.locator("#relay-composer").boundingBox();
     assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= 1440 && box.y + box.height <= 1000);
     assert(await page.locator("#relay-chat-input").isVisible());
-    const drawer = await page.locator("#relay-inspector-panel:visible").boundingBox();
+    const drawer = await visibleBounds(page.locator("#relay-inspector-panel"));
     if (drawer) assert(drawer.y + drawer.height < box.y, "Drawer must not cover permanent composer");
     return box;
   };
   const runCase = async (id, action) => {
-    const entry = { id, status: "failed", startedAt: new Date().toISOString() };
+    const entry = { id, status: "failed", startedAt: new Date().toISOString(), horizontalOverflow: null };
     audit.cases.push(entry); persist();
-    entry.actual = await action();
-    entry.composerBounds = await composerVisible();
-    entry.horizontalOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
-    assert(entry.horizontalOverflow <= 0, id + ": horizontal overflow");
-    assert(await page.locator(".relay-floating-panel:visible").count() <= 1, "Panels must be exclusive");
-    const filename = id + ".png";
-    await page.screenshot({ path: path.join(output, filename), fullPage: false });
-    audit.screenshots.push({ caseId: id, file: filename, sha256: digest(fs.readFileSync(path.join(output, filename))) });
-    entry.status = "passed"; entry.completedAt = new Date().toISOString(); persist();
+    try {
+      entry.actual = await action();
+      entry.composerBounds = await composerVisible();
+      entry.horizontalOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
+      assert(entry.horizontalOverflow <= 0, id + ": horizontal overflow");
+      assert(await page.locator(".relay-floating-panel:visible").count() <= 1, "Panels must be exclusive");
+      const filename = id + ".png";
+      await page.screenshot({ path: path.join(output, filename), fullPage: false });
+      audit.screenshots.push({ caseId: id, file: filename, sha256: digest(fs.readFileSync(path.join(output, filename))) });
+      entry.status = "passed";
+    } catch (error) {
+      entry.error = String(error.message).replaceAll(path.resolve(__dirname, ".."), "<repository>");
+      try {
+        const filename = id + "-failed.png";
+        await page.screenshot({ path: path.join(output, filename), fullPage: false });
+        audit.screenshots.push({ caseId: id, status: "failed", file: filename, sha256: digest(fs.readFileSync(path.join(output, filename))) });
+      } catch { entry.failureScreenshot = "unavailable"; }
+      throw error;
+    } finally { entry.completedAt = new Date().toISOString(); persist(); }
+  };
+  const tidyConnectionFixture = async () => {
+    await closePanels();
+    await page.locator("#relay-layout").click();
+    await page.locator("#relay-fit").click();
+    const rectangles = await page.locator(".relay-card").evaluateAll((cards) => cards.map((card) => {
+      const bounds = card.getBoundingClientRect();
+      return { id: card.dataset.node, x: bounds.x, y: bounds.y, width: bounds.width, height: bounds.height };
+    }));
+    return assertDisjointCards(rectangles);
+  };
+  const assertPortHit = async (point, expected) => {
+    const actual = await page.evaluate(({ x, y }) => {
+      const port = document.elementFromPoint(x, y)?.closest("[data-port-node]");
+      return port ? { node: port.dataset.portNode, port: port.dataset.portId, direction: port.dataset.direction } : null;
+    }, point);
+    assert.deepEqual(actual, expected, "Pointer must hit the intended port, not an overlapping card or panel");
   };
   const dragPort = async (from, fromPort, to, toPort) => {
     await closePanels();
     await page.locator('[data-node="' + from + '"]').hover();
     const outputPort = page.locator('[data-port-node="' + from + '"][data-port-id="' + fromPort + '"][data-direction="outputs"] i');
     const inputPort = page.locator('[data-port-node="' + to + '"][data-port-id="' + toPort + '"][data-direction="inputs"] i');
-    const start = await outputPort.boundingBox(); const end = await inputPort.boundingBox();
-    assert(start && end);
-    await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+    const start = await outputPort.boundingBox();
+    assert(start);
+    const sourcePoint = { x: start.x + start.width / 2, y: start.y + start.height / 2 };
+    await page.mouse.move(sourcePoint.x, sourcePoint.y);
+    await assertPortHit(sourcePoint, { node: from, port: fromPort, direction: "outputs" });
     await page.mouse.down();
-    await page.mouse.move(start.x + 15, start.y + 15, { steps: 3 });
-    await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 15 });
-    await page.mouse.up();
+    try {
+      await page.mouse.move(sourcePoint.x + 15, sourcePoint.y + 15, { steps: 3 });
+      const end = await inputPort.boundingBox();
+      assert(end);
+      const targetPoint = { x: end.x + end.width / 2, y: end.y + end.height / 2 };
+      await page.mouse.move(targetPoint.x, targetPoint.y, { steps: 15 });
+      await assertPortHit(targetPoint, { node: to, port: toPort, direction: "inputs" });
+    } finally { await page.mouse.up(); }
   };
 
   await runCase("01-empty-first-use", async () => {
@@ -247,20 +317,22 @@ async function runDesktopCases(page, audit, output, persist) {
     };
     await dragResource("text", { x: 430, y: 230 });
     await dragResource("ai", { x: 900, y: 420 });
+    const fixtureBounds = await tidyConnectionFixture();
     const before = (await save()).graph;
     assert.equal(before.nodes.length, 2);
     await closePanels();
     const handle = page.locator('[data-drag-node="' + before.nodes[0].id + '"]');
     const box = await handle.boundingBox();
     await page.mouse.move(box.x + 30, box.y + 10); await page.mouse.down();
-    await page.mouse.move(box.x + 130, box.y + 75, { steps: 10 }); await page.mouse.up();
+    await page.mouse.move(box.x + 5, box.y + 45, { steps: 10 }); await page.mouse.up();
     const after = (await save()).graph;
     assert.notEqual(after.nodes[0].x, before.nodes[0].x);
     assert.deepEqual(after.edges, before.edges);
-    return { resourceDragAdded: 2, nodeMoveChangedPosition: true };
+    return { resourceDragAdded: 2, nodeMoveChangedPosition: true, fixtureBounds };
   });
 
   await runCase("12-port-drag-type-rejection", async () => {
+    const fixtureBounds = await tidyConnectionFixture();
     const before = (await save()).graph;
     const text = before.nodes.find((node) => node.kind === "text");
     const ai = before.nodes.find((node) => node.kind === "ai");
@@ -269,11 +341,11 @@ async function runDesktopCases(page, audit, output, persist) {
     assert(linked.edges.some((edge) => edge.from === text.id && edge.fromPort === "out" && edge.to === ai.id && edge.toPort === "material"));
     await addKind("image");
     const withImage = (await save()).graph;
-    await page.locator("#relay-layout").click(); await page.locator("#relay-fit").click();
+    const rejectionFixtureBounds = await tidyConnectionFixture();
     await dragPort(withImage.nodes.at(-1).id, "out", ai.id, "material");
     assert.match(await page.locator("#relay-notice").textContent(), /类型不匹配/);
     assert.equal((await save()).graph.edges.length, linked.edges.length);
-    return { portBoundConnection: true, incompatibleImageRejected: true };
+    return { portBoundConnection: true, incompatibleImageRejected: true, fixtureBounds, rejectionFixtureBounds, endpointHitTested: true };
   });
 
   await runCase("13-nine-kinds-and-template", async () => {
@@ -349,10 +421,7 @@ async function runDesktopCases(page, audit, output, persist) {
 
 async function main() {
   const destination = path.join(__dirname, "qa", "workflow-dialog-v1.0");
-  fs.mkdirSync(destination, { recursive: true });
-  const audit = initialAudit();
-  const persist = () => fs.writeFileSync(path.join(destination, "audit.json"), JSON.stringify(audit, null, 2) + "\n");
-  persist();
+  const { audit, output, persist } = createAuditRun(destination);
   let browser;
   let context;
   try {
@@ -403,9 +472,6 @@ async function main() {
       observed.on("console", (message) => { if (message.type() === "error") audit.consoleErrors.push(message.text()); });
       observed.on("pageerror", (error) => audit.pageErrors.push(error.message));
     });
-    const output = path.join(destination, crypto.randomUUID());
-    fs.mkdirSync(output);
-    audit.artifactDirectory = path.basename(output);
     persist();
     const referenceFile = "v4-authorized-materials/relay-canvas-simple-ui@20261019.html";
     const referenceBytes = fs.readFileSync(path.join(repository, referenceFile));
@@ -447,5 +513,5 @@ async function main() {
   }
 }
 
-module.exports = { assetFiles, targetURL, allowedAsset, safeURL, verifyResponse, initialAudit };
+module.exports = { assetFiles, targetURL, allowedAsset, safeURL, verifyResponse, initialAudit, visibleBounds, assertDisjointCards, createAuditRun };
 if (require.main === module) main().catch(() => { process.exitCode = 1; });

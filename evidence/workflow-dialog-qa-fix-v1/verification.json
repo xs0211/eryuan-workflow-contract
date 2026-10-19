@@ -1,0 +1,169 @@
+{
+  "status": "passed",
+  "baseCommit": "23ef629beab623674a07cad4e302bc481a78abf0",
+  "revisionBaseCommit": "9ed527f521ee0f8f7316da1688becd9c5b7fd692",
+  "branch": "codex/workflow-dialog-v1.0",
+  "recordedAt": "2026-10-19T10:46:57.741Z",
+  "environment": {
+    "node": "v22.22.3",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "scope": "Node pure functions and VM substitutes; not browser acceptance",
+  "commands": [
+    {
+      "command": "node --check app.js",
+      "exitCode": 0,
+      "output": "(node:30986) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check workbench.js",
+      "exitCode": 0,
+      "output": "(node:30987) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check relay-model.js",
+      "exitCode": 0,
+      "output": "(node:30988) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check relay-editor.js",
+      "exitCode": 0,
+      "output": "(node:30989) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check relay-ui.js",
+      "exitCode": 0,
+      "output": "(node:30990) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check workbench.test.cjs",
+      "exitCode": 0,
+      "output": "(node:30991) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check relay-model.test.cjs",
+      "exitCode": 0,
+      "output": "(node:30992) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check relay-editor.test.cjs",
+      "exitCode": 0,
+      "output": "(node:30993) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check editor-test-helpers.cjs",
+      "exitCode": 0,
+      "output": "(node:30994) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check desktop-qa.cjs",
+      "exitCode": 0,
+      "output": "(node:30995) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check desktop-qa.test.cjs",
+      "exitCode": 0,
+      "output": "(node:30996) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check verify.cjs",
+      "exitCode": 0,
+      "output": "(node:30997) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs relay-editor.test.cjs desktop-qa.test.cjs",
+      "exitCode": 0,
+      "outputFile": "node-tests.tap"
+    }
+  ],
+  "sourceFiles": {
+    "prototype/app.js": {
+      "bytes": 113579,
+      "sha256": "12b65b4d81e3892ee753ee6cd14f22ae588279bb7a7559d23233b9378b9414ea"
+    },
+    "prototype/index.html": {
+      "bytes": 24774,
+      "sha256": "4f59097aac82c58652f856c0c4b66f1523a61d1648033d0c404825c13f39fac3"
+    },
+    "prototype/styles.css": {
+      "bytes": 49691,
+      "sha256": "6822e69fe21aed865ae62922f45b7f3251c0e6e109449fa72bba6c20ce748b9f"
+    },
+    "prototype/workbench.js": {
+      "bytes": 35686,
+      "sha256": "48d75c053ccb49514ada79d1b8d179713ee0ccaf93fc63b843a2fddf2a1de867"
+    },
+    "prototype/workbench.css": {
+      "bytes": 6130,
+      "sha256": "c8aed6e6c4a792d65b124385258e100cba8f5401e1ac6391eb1bb9a433945b39"
+    },
+    "prototype/relay-model.js": {
+      "bytes": 26822,
+      "sha256": "86a032019391f054706fd43717331b087bc39eb0aa6c95931f47defd3c237852"
+    },
+    "prototype/relay-editor.js": {
+      "bytes": 17383,
+      "sha256": "d5e5763cb2e2d87e78faff9ffa43c42c6dc902a951297e382274545f1482aed1"
+    },
+    "prototype/relay-ui.js": {
+      "bytes": 58546,
+      "sha256": "f8f1772c085ba732ac9f72a1c817f4a882cae00ea619c6494275c5f19a5eaeaa"
+    },
+    "prototype/relay-ui.css": {
+      "bytes": 18202,
+      "sha256": "dc044bd1d115e929a1391a9ebb8b46289cb7587c8be22ca03fa9a1839428cfe5"
+    },
+    "prototype/workbench.test.cjs": {
+      "bytes": 16491,
+      "sha256": "012afa665eb87123bfb3319647f47f46d1984998ea2df993f0a698e3dee37757"
+    },
+    "prototype/relay-model.test.cjs": {
+      "bytes": 14834,
+      "sha256": "d4113ce6446ed3d5a4958b939ba423d108a8dbc01a328e2c903ea9182d7f8654"
+    },
+    "prototype/relay-editor.test.cjs": {
+      "bytes": 22659,
+      "sha256": "f678b5247305f3cf3b685c915c99f466e00538f990f036c972cb8797a9495aef"
+    },
+    "prototype/editor-test-helpers.cjs": {
+      "bytes": 3842,
+      "sha256": "2ab488ed16b762d6f284690b9595bdb50994fe2ffd9308a5ff7746c04ea5c97b"
+    },
+    "prototype/desktop-qa.cjs": {
+      "bytes": 31239,
+      "sha256": "b09f3520158182d927e10c5853dad7cd282a2bf1a91e328f6a54cd8412378d54"
+    },
+    "prototype/desktop-qa.test.cjs": {
+      "bytes": 7462,
+      "sha256": "ef57ff988ca60b80cef2befe5df1cce03ddc0657e5bdfe35bd9beb8f6fabe341"
+    },
+    "prototype/verify.cjs": {
+      "bytes": 3886,
+      "sha256": "645d022c329351fe70a7f9d3eca440889f626956ddefb5ccdfaadee58c3efca3"
+    }
+  },
+  "browser": {
+    "status": "not_run",
+    "screenshots": [],
+    "domAssertions": null,
+    "consoleErrors": null,
+    "horizontalOverflow": null,
+    "networkCallCounts": null
+  },
+  "visualReview": "pending_human_comparison",
+  "firstUseReview": "pending_human_walkthrough",
+  "deployment": "not_run",
+  "originalSiteIntegration": "not_verified",
+  "platformExecution": "not_run",
+  "A2": "blocked",
+  "tests": {
+    "tests": 109,
+    "pass": 109,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "tapSha256": "a7c537fface6cd18e4b920006a093c6f022025dad6eac42ada53a78cbf4c45f2"
+}
