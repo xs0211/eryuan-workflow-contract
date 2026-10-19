@@ -1,0 +1,251 @@
+{
+  "schema": "binary-ai.v4-atom-realization-map/0.2",
+  "recordedAt": "2026-10-19T12:15:00+08:00",
+  "status": "implementation_baseline_mapped",
+  "runtimeStatus": "not_run",
+  "v4Contract": {
+    "schema": "e2s-relay/2.0",
+    "file": "schema-2.0-atoms@c0a399e-20261018.md",
+    "lines": 734,
+    "bytes": 56179,
+    "sha256": "915901f6f3f640c722ad8adc9ddbc299d8a182d0d649e52f29bb58a204740b5c",
+    "contractCodeBaseline": "d68782e",
+    "schemaFileCommit": "c0a399e",
+    "reportedProdRelay": "53bbcd6",
+    "prodSchemaEquality": "unknown"
+  },
+  "supportedTechnicalKinds": [
+    "text",
+    "image",
+    "file",
+    "group_messages",
+    "ai",
+    "sign",
+    "group_send",
+    "drive_save",
+    "result"
+  ],
+  "portTypes": [
+    "text",
+    "image",
+    "file",
+    "msg"
+  ],
+  "atoms": [
+    {
+      "id": "V01",
+      "name": "登记制作任务",
+      "technicalKinds": ["text", "file", "ai"],
+      "executor": "org_agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": false},
+        {"id": "attach", "types": ["file", "image"], "required": false}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true}
+      ],
+      "status": "executor_composed",
+      "extensions": ["artifact_identity", "hash_compute", "idempotent_task_record"]
+    },
+    {
+      "id": "V02",
+      "name": "生成脚本方案",
+      "technicalKinds": ["text", "file", "ai"],
+      "executor": "org_agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": false}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true}
+      ],
+      "status": "executor_composed",
+      "extensions": ["source_provenance_check", "artifact_identity"]
+    },
+    {
+      "id": "H02",
+      "name": "人工确认脚本",
+      "technicalKinds": ["sign"],
+      "executor": "human_gate",
+      "inputPorts": [
+        {"id": "content", "types": ["text", "file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "approved", "types": ["text"]},
+        {"id": "rejected", "types": ["text"]}
+      ],
+      "status": "extension_required",
+      "extensions": ["reviewed_artifact_identity", "approval_invalidation", "human_review_separation"]
+    },
+    {
+      "id": "V03",
+      "name": "生成分镜",
+      "technicalKinds": ["ai"],
+      "executor": "org_agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": false}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true}
+      ],
+      "status": "executor_composed",
+      "extensions": ["stable_shot_id", "six_item_validation", "approval_lineage"]
+    },
+    {
+      "id": "V04",
+      "name": "单镜生图或修图",
+      "technicalKinds": ["ai"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": false}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["file"], "required": true}
+      ],
+      "status": "extension_required",
+      "extensions": ["image_generation_resource", "media_storage", "artifact_identity", "paid_unknown_result_policy"]
+    },
+    {
+      "id": "V05",
+      "name": "素材整理、冻结与完整性审核",
+      "technicalKinds": ["ai", "result"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true},
+        {"id": "out_package", "types": ["file"], "required": false}
+      ],
+      "status": "extension_required",
+      "extensions": ["manifest_hash", "dependency_cas", "atomic_freeze", "stable_shot_id"]
+    },
+    {
+      "id": "H05",
+      "name": "人工确认素材包",
+      "technicalKinds": ["sign"],
+      "executor": "human_gate_plus_derivation",
+      "inputPorts": [
+        {"id": "content", "types": ["text", "file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "approved", "types": ["text"]},
+        {"id": "rejected", "types": ["text"]}
+      ],
+      "status": "extension_required",
+      "extensions": ["reviewed_candidate_identity", "approved_content_package_derivation", "independent_package_identity"]
+    },
+    {
+      "id": "V06",
+      "name": "单镜提交视频",
+      "technicalKinds": ["ai"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": false}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true}
+      ],
+      "status": "extension_required",
+      "extensions": ["business_intent_id", "idempotency_key", "quota_reservation", "provider_reconciliation"]
+    },
+    {
+      "id": "V07",
+      "name": "查询并取回片段",
+      "technicalKinds": ["ai"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true},
+        {"id": "out_clip", "types": ["file"], "required": true}
+      ],
+      "status": "extension_required",
+      "extensions": ["durable_poll", "download", "media_probe", "restart_recovery", "cancellation"]
+    },
+    {
+      "id": "V08",
+      "name": "旁白检测",
+      "technicalKinds": ["ai"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["text"], "required": true}
+      ],
+      "status": "executor_composed",
+      "extensions": ["explicit_skipped_evidence", "deterministic_transcription_tool"]
+    },
+    {
+      "id": "V09",
+      "name": "可选统一音色",
+      "technicalKinds": ["ai"],
+      "executor": "agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["file"], "required": true}
+      ],
+      "status": "extension_required",
+      "extensions": ["optional_skip_branch", "fallback_evidence", "degraded_state"]
+    },
+    {
+      "id": "V10",
+      "name": "合片、媒体检查与主版本冻结",
+      "technicalKinds": ["ai"],
+      "executor": "media_agent_or_expert",
+      "inputPorts": [
+        {"id": "material", "types": ["text", "msg"], "required": true},
+        {"id": "attach", "types": ["file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "result", "types": ["file"], "required": true}
+      ],
+      "status": "extension_required",
+      "extensions": ["six_source_version_check", "deterministic_media_compose", "duration_evidence", "master_identity"]
+    },
+    {
+      "id": "H10",
+      "name": "人工最终验收",
+      "technicalKinds": ["sign"],
+      "executor": "human_gate",
+      "inputPorts": [
+        {"id": "content", "types": ["text", "file", "image"], "required": true}
+      ],
+      "outputPorts": [
+        {"id": "approved", "types": ["text"]},
+        {"id": "rejected", "types": ["text"]}
+      ],
+      "status": "extension_required",
+      "extensions": ["reviewed_artifact_identity", "approval_invalidation", "human_review_separation"]
+    }
+  ],
+  "compatibilityExtensions": [
+    "X01_artifact_identity",
+    "X02_five_stage_evidence",
+    "X03_port_cardinality_and_identity_key",
+    "X04_deterministic_tools",
+    "X05_h05_approved_package_derivation",
+    "X06_paid_idempotency_and_reconciliation",
+    "X07_durable_wait_cancel_and_late_event_isolation",
+    "X08_optional_and_degraded_branch_evidence",
+    "X09_resource_version_and_runtime_reauthorization",
+    "X10_media_storage_probe_and_compose"
+  ],
+  "executionBoundary": {
+    "onlineVerified": 0,
+    "platformRun": "not_run",
+    "paidCall": "not_run",
+    "businessWriteBack": "not_run",
+    "a2": "blocked"
+  }
+}

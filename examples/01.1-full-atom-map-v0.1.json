@@ -1,0 +1,322 @@
+{
+  "schemaVersion": "binary-ai.01.1-atom-map/0.1",
+  "flowId": "zhz-01.1-video-production",
+  "flowVersion": "0.1.0",
+  "status": "design_only_not_run",
+  "source": {
+    "taxonomy": "workspace/zhuangzhou-migration/01.1-atom-taxonomy-v0.2.md",
+    "fieldDictionary": "workspace/zhuangzhou-migration/01.1-minimum-field-dictionary-v0.1.md",
+    "template": "atom.universal@1.0.0"
+  },
+  "atoms": [
+    {
+      "atomId": "01.1-V01",
+      "name": "登记制作任务",
+      "businessCategory": "production_material",
+      "inputs": [
+        "ProductionRequest@1.0.0"
+      ],
+      "outputs": [
+        "TaskRecord@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "source.lookup",
+        "file.read",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V02",
+      "name": "生成脚本方案",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "TaskRecord@1.0.0",
+        "HostProfile@1.0.0",
+        "ProductFacts@1.0.0",
+        "MaterialRules@1.0.0"
+      ],
+      "outputs": [
+        "ScriptProposal@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "text.generate"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-H02",
+      "name": "人工确认脚本",
+      "businessCategory": "human_decision",
+      "inputs": [
+        "ScriptProposal@1.0.0"
+      ],
+      "outputs": [
+        "HumanDecision@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "human.review"
+      ],
+      "humanDecision": true
+    },
+    {
+      "atomId": "01.1-V03",
+      "name": "生成分镜",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "HumanDecision@1.0.0",
+        "HostProfile@1.0.0",
+        "ProductFacts@1.0.0"
+      ],
+      "outputs": [
+        "StoryboardPlan@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "text.generate"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V04",
+      "name": "单镜生图或修图",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "ShotImageRequest@1.0.0"
+      ],
+      "outputs": [
+        "ShotImage@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "image.generate",
+        "image.edit",
+        "storage.put",
+        "storage.get",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V05",
+      "name": "素材整理、冻结与完整性审核",
+      "businessCategory": "assembly_and_freeze",
+      "inputs": [
+        "StoryboardPlan@1.0.0",
+        "ShotImage@1.0.0",
+        "ArtifactManifest@1.0.0"
+      ],
+      "outputs": [
+        "FrozenContentPackageCandidate@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "file.read",
+        "storage.get",
+        "storage.put",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-H05",
+      "name": "人工确认素材包",
+      "businessCategory": "human_decision",
+      "inputs": [
+        "FrozenContentPackageCandidate@1.0.0"
+      ],
+      "outputs": [
+        "HumanDecision@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "human.review"
+      ],
+      "humanDecision": true
+    },
+    {
+      "atomId": "01.1-V06",
+      "name": "单镜提交视频",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "ApprovedContentPackage@1.0.0",
+        "VideoSubmissionIntent@1.0.0"
+      ],
+      "outputs": [
+        "ProviderTaskReceipt@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "video.submit",
+        "idempotency.ledger",
+        "quota.reserve",
+        "provider.reconcile"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V07",
+      "name": "查询并取回片段",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "ProviderTaskReceipt@1.0.0"
+      ],
+      "outputs": [
+        "ShotVideo@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "video.poll",
+        "media.download",
+        "media.probe",
+        "storage.put",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V08",
+      "name": "旁白检测",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "ShotVideo@1.0.0",
+        "ApprovedDialogue@1.0.0"
+      ],
+      "outputs": [
+        "NarrationCheck@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "audio.extract",
+        "speech.transcribe"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V09",
+      "name": "可选统一音色",
+      "businessCategory": "processing_agent",
+      "inputs": [
+        "ShotVideo@1.0.0",
+        "VoicePolicy@1.0.0"
+      ],
+      "outputs": [
+        "VoiceProcessedClip@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "voice.convert",
+        "audio.original_fallback",
+        "storage.put",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-V10",
+      "name": "合片、媒体检查与主版本冻结",
+      "businessCategory": "assembly_and_freeze",
+      "inputs": [
+        "VoiceProcessedClip@1.0.0",
+        "ApprovedContentPackage@1.0.0"
+      ],
+      "outputs": [
+        "MasterMediaCandidate@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "media.compose",
+        "media.probe",
+        "audio.probe",
+        "duration.measure",
+        "storage.put",
+        "hash.compute"
+      ],
+      "humanDecision": false
+    },
+    {
+      "atomId": "01.1-H10",
+      "name": "人工最终验收",
+      "businessCategory": "human_decision",
+      "inputs": [
+        "MasterMediaCandidate@1.0.0"
+      ],
+      "outputs": [
+        "HumanDecision@1.0.0"
+      ],
+      "requiredCapabilities": [
+        "human.review"
+      ],
+      "humanDecision": true
+    }
+  ],
+  "edges": [
+    {
+      "from": "01.1-V01",
+      "to": "01.1-V02",
+      "artifact": "TaskRecord@1.0.0"
+    },
+    {
+      "from": "01.1-V02",
+      "to": "01.1-H02",
+      "artifact": "ScriptProposal@1.0.0"
+    },
+    {
+      "from": "01.1-H02",
+      "to": "01.1-V03",
+      "artifact": "HumanDecision@1.0.0"
+    },
+    {
+      "from": "01.1-V03",
+      "to": "01.1-V04",
+      "artifact": "StoryboardPlan@1.0.0"
+    },
+    {
+      "from": "01.1-V04",
+      "to": "01.1-V05",
+      "artifact": "ShotImage@1.0.0"
+    },
+    {
+      "from": "01.1-V05",
+      "to": "01.1-H05",
+      "artifact": "FrozenContentPackageCandidate@1.0.0"
+    },
+    {
+      "from": "01.1-H05",
+      "to": "01.1-V06",
+      "artifact": "HumanDecision@1.0.0"
+    },
+    {
+      "from": "01.1-V06",
+      "to": "01.1-V07",
+      "artifact": "ProviderTaskReceipt@1.0.0"
+    },
+    {
+      "from": "01.1-V07",
+      "to": "01.1-V08",
+      "artifact": "ShotVideo@1.0.0"
+    },
+    {
+      "from": "01.1-V08",
+      "to": "01.1-V09",
+      "artifact": "NarrationCheck@1.0.0"
+    },
+    {
+      "from": "01.1-V09",
+      "to": "01.1-V10",
+      "artifact": "VoiceProcessedClip@1.0.0"
+    },
+    {
+      "from": "01.1-V10",
+      "to": "01.1-H10",
+      "artifact": "MasterMediaCandidate@1.0.0"
+    }
+  ],
+  "bounds": {
+    "shotCount": 6,
+    "defaultInputPortsPerAtom": 1,
+    "defaultOutputPortsPerAtom": 1,
+    "multiPortExpansion": "explicit_only",
+    "maxSubflowDepthCandidate": 3
+  },
+  "currentBlockers": [
+    "typed_artifact_handoff_unverified",
+    "blocked_route_enforcement_failed",
+    "human_approval_binding_partial",
+    "image_and_video_capabilities_unavailable",
+    "media_space_unavailable",
+    "deterministic_file_and_media_tools_unverified",
+    "flow_version_reuse_pending_architecture_confirmation"
+ ]
+}

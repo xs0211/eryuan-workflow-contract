@@ -1,0 +1,920 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>流程画布 · 简洁化 UI</title>
+<style>
+:root{
+  --bg:#F3F4F6; --card:#fff; --ink:#20242E; --sub:#7B8494; --faint:#99A1B0;
+  --line:#E8EAEF; --accent:#4E6EF2; --accent-soft:#EEF1FE;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  background:var(--bg); color:var(--ink); overflow:hidden;
+}
+svg{display:block}
+.i{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- 画布 ---------- */
+.canvas{
+  position:absolute; inset:0;
+  background-image:radial-gradient(circle,#DBDEE4 1px,transparent 1.4px);
+  background-size:22px 22px;
+}
+.world-wrap{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(.69);transform-origin:center}
+.world{position:relative;width:1620px;height:600px}
+#edges{position:absolute;inset:0;pointer-events:none}
+#edges path{fill:none;stroke:#C7CBD4;stroke-width:1.6}
+
+/* ---------- 节点 ---------- */
+.node{
+  position:absolute;background:#fff;border:1px solid var(--line);border-radius:12px;
+  box-shadow:0 1px 2px rgba(16,24,40,.04),0 8px 24px rgba(16,24,40,.05);
+  padding:12px 14px;
+}
+.n-head{display:flex;align-items:center;gap:8px}
+.n-ico{width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex:none}
+.n-ico svg{width:15px;height:15px}
+.tint-sky{background:#E6F5FE;color:#0E9BE0}
+.tint-indigo{background:#EEF0FE;color:#6366F1}
+.tint-amber{background:#FDF3DF;color:#E08E0B}
+.tint-green{background:#E5F7EF;color:#0FA373}
+.n-title{font-size:13px;font-weight:600}
+.n-tag{margin-left:auto;font-size:10.5px;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.n-meta{margin-top:7px;font-size:11.5px;color:var(--sub);line-height:1.45}
+.n-meta:first-of-type{margin-top:8px}
+
+.port{position:absolute;display:flex;align-items:center;gap:4px;transform:translateY(-50%)}
+.port.l{left:-5px}
+.port.r{right:-5px;flex-direction:row-reverse}
+.p-dot{width:9px;height:9px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px rgba(16,24,40,.08);flex:none}
+.c-blue{background:#4E6EF2}.c-teal{background:#12B5A5}.c-amber{background:#F0A32F}
+.p-lab{font-size:10px;color:#8C95A6;background:rgba(255,255,255,.9);border-radius:4px;padding:0 2px;white-space:nowrap}
+
+/* ---------- 底栏浮层面板（原子 / 资源） ---------- */
+.popover{
+  position:fixed;bottom:74px;transform:translateX(-50%);width:298px;z-index:30;
+  background:#fff;border-radius:16px;padding:14px;
+  box-shadow:0 18px 50px rgba(16,24,40,.14),0 2px 6px rgba(16,24,40,.06);
+  transition:opacity .16s,transform .16s;
+}
+.popover.closed{opacity:0;transform:translateX(-50%) translateY(8px) scale(.98);pointer-events:none}
+
+/* ---------- 资源：敞开式面板（Tab 左右切换 + 卡片网格） ---------- */
+.res-pop{
+  position:fixed;bottom:74px;transform:translateX(-50%);width:620px;z-index:30;
+  background:#fff;border-radius:16px;padding:14px;
+  box-shadow:0 18px 50px rgba(16,24,40,.14),0 2px 6px rgba(16,24,40,.06);
+  transition:opacity .16s,transform .16s;
+}
+.res-pop.closed{opacity:0;transform:translateX(-50%) translateY(8px) scale(.98);pointer-events:none}
+.rp-head{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.rp-title{font-size:14.5px;font-weight:600;flex:none}
+.rp-head .p-search{flex:1;height:32px;margin:0 6px}
+.rp-tabs{display:flex;gap:4px;background:#F2F3F7;border-radius:10px;padding:3px;margin-bottom:10px}
+.rp-tab{
+  flex:1;border:0;background:transparent;height:30px;border-radius:8px;
+  font-size:12.5px;color:#5B6472;cursor:pointer;font-family:inherit;
+  transition:background .15s,color .15s;
+}
+.rp-tab:hover{color:var(--ink)}
+.rp-tab.active{background:#fff;color:var(--accent);font-weight:600;box-shadow:0 1px 3px rgba(16,24,40,.12)}
+.rp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rp-card{
+  border:1px solid var(--line);border-radius:12px;padding:10px;position:relative;
+  display:flex;gap:9px;align-items:flex-start;cursor:grab;
+  transition:border-color .15s,box-shadow .15s,transform .1s;
+}
+.rp-card:hover{border-color:var(--accent);box-shadow:0 4px 14px rgba(78,110,242,.14)}
+.rp-card:active{transform:scale(.98)}
+.rp-card .a-ico{width:30px;height:30px;border-radius:9px}
+.rp-card .a-ico svg{width:15px;height:15px}
+.rp-body{min-width:0}
+.rp-name{font-size:12.5px;font-weight:600;color:var(--ink)}
+.rp-desc{font-size:11px;color:var(--faint);margin-top:2px;line-height:1.4}
+.rp-add{position:absolute;top:8px;right:10px;font-size:10.5px;color:var(--accent);opacity:0;transition:opacity .12s}
+.rp-card:hover .rp-add{opacity:1}
+.rp-empty{grid-column:1/-1;text-align:center;padding:26px 0;color:var(--faint);font-size:12px}
+
+/* ---------- 资源一级：图标 Dock（开放式，左右切换） ---------- */
+.res-dock{
+  position:fixed;left:50%;bottom:74px;transform:translateX(-50%);z-index:31;
+  display:flex;align-items:center;gap:6px;padding:4px 8px 8px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-radius:18px;
+  box-shadow:0 18px 50px rgba(16,24,40,.16),0 2px 6px rgba(16,24,40,.06);
+  transition:opacity .16s,transform .16s;
+}
+.res-dock.closed{opacity:0;transform:translateX(-50%) translateY(10px) scale(.98);pointer-events:none}
+.rd-arrow{
+  border:0;background:transparent;width:28px;height:46px;border-radius:10px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:#98A1B1;cursor:pointer;
+  transition:background .15s,color .15s,opacity .15s;
+}
+.rd-arrow:hover{background:#F2F3F7;color:#5B6472}
+.rd-arrow.dim{opacity:.35}
+.rd-arrow svg{width:17px;height:17px}
+.rd-track{display:flex;gap:16px;padding:12px 8px 4px;overflow-x:auto;scrollbar-width:none}
+.rd-track::-webkit-scrollbar{display:none}
+.rd-item{
+  border:0;background:transparent;padding:2px;font-family:inherit;cursor:pointer;flex:none;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+}
+.rd-circle{
+  width:56px;height:56px;border-radius:17px;position:relative;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;
+}
+.rd-circle svg{width:23px;height:23px;stroke:#fff;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+.g-indigo{background:linear-gradient(135deg,#818CF8,#4F46E5);box-shadow:0 6px 16px rgba(79,70,229,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.g-sky{background:linear-gradient(135deg,#38BDF8,#0284C7);box-shadow:0 6px 16px rgba(2,132,199,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.g-amber{background:linear-gradient(135deg,#FBBF24,#F59E0B);box-shadow:0 6px 16px rgba(245,158,11,.4),inset 0 1px 0 rgba(255,255,255,.4)}
+.g-green{background:linear-gradient(135deg,#4ADE80,#059669);box-shadow:0 6px 16px rgba(5,150,105,.35),inset 0 1px 0 rgba(255,255,255,.35)}
+.rd-item:active .rd-circle{transform:scale(.95)}
+.rd-item:hover .rd-circle{transform:translateY(-4px) scale(1.06)}
+.rd-item:hover .g-indigo{box-shadow:0 12px 24px rgba(79,70,229,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.rd-item:hover .g-sky{box-shadow:0 12px 24px rgba(2,132,199,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.rd-item:hover .g-amber{box-shadow:0 12px 24px rgba(245,158,11,.55),inset 0 1px 0 rgba(255,255,255,.4)}
+.rd-item:hover .g-green{box-shadow:0 12px 24px rgba(5,150,105,.5),inset 0 1px 0 rgba(255,255,255,.35)}
+.rd-badge{
+  position:absolute;top:-5px;right:-9px;min-width:18px;height:18px;padding:0 5px;
+  border-radius:999px;background:#F4633A;color:#fff;font-size:10.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;border:2px solid #fff;
+}
+.rd-label{font-size:10.5px;color:#5B6472;line-height:1;transition:color .15s}
+.rd-item:hover .rd-label{color:var(--ink)}
+
+/* ---------- 左侧：原子四大分类（一级） ---------- */
+.cat-rail{
+  position:fixed;left:14px;top:50%;transform:translateY(-50%);z-index:20;
+  background:#fff;border-radius:16px;padding:8px 6px;display:flex;flex-direction:column;gap:2px;
+  box-shadow:0 10px 30px rgba(16,24,40,.10),0 1px 2px rgba(16,24,40,.06);
+}
+.cat-btn{
+  border:0;background:transparent;width:56px;padding:8px 0 7px;border-radius:12px;
+  display:flex;flex-direction:column;align-items:center;gap:5px;color:#5B6472;cursor:pointer;font-family:inherit;
+  transition:background .15s,color .15s,transform .1s;
+}
+.cat-btn:hover{background:#F2F3F7}
+.cat-btn:active{transform:scale(.96)}
+.cat-btn.active{background:var(--accent-soft);color:var(--accent)}
+.cat-btn svg{width:19px;height:19px}
+.cat-btn span{font-size:10.5px;line-height:1;white-space:nowrap}
+.cat-pop{
+  position:fixed;left:92px;top:200px;width:212px;z-index:29;
+  background:#fff;border-radius:14px;padding:8px;
+  box-shadow:0 18px 50px rgba(16,24,40,.14),0 2px 6px rgba(16,24,40,.06);
+  transition:opacity .15s,transform .15s;
+}
+.cat-pop.closed{opacity:0;transform:translateX(-6px);pointer-events:none}
+.cp-head{display:flex;align-items:baseline;gap:6px;padding:8px 8px 6px;font-size:13px;font-weight:600}
+.cp-count{font-size:11.5px;color:var(--faint);font-weight:500}
+.cp-item{display:flex;align-items:center;gap:9px;padding:7.5px 8px;border-radius:9px;font-size:12.5px;color:#3A4150;cursor:pointer;transition:background .12s}
+.cp-item:hover{background:#F6F7FA}
+.cp-dot{width:6px;height:6px;border-radius:50%;background:#C4CAD6;flex:none}
+.cp-more{padding:7px 8px;font-size:11.5px;color:var(--accent);cursor:pointer;border-radius:9px}
+.cp-more:hover{background:var(--accent-soft)}
+
+/* ---------- 画布节点交互态（放入画布后） ---------- */
+.node{cursor:grab;user-select:none}
+.node.dragging{cursor:grabbing}
+.node.selected{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft),0 8px 24px rgba(16,24,40,.08)}
+.node [contenteditable="true"]{user-select:text;outline:1px dashed var(--accent);border-radius:4px;padding:0 3px;background:#FBFCFF}
+.node.editing .n-meta{outline:1px dashed #C3CDFF;border-radius:4px;padding:1px 4px;background:#FBFCFF;color:var(--ink)}
+#edges path.temp-edge{stroke:var(--accent);stroke-width:2;stroke-dasharray:5 4}
+.port .p-dot{transition:transform .12s}
+.port:hover .p-dot{transform:scale(1.35)}
+.cp-item:hover::after{content:'＋';margin-left:auto;color:var(--accent);font-weight:600}
+.cp-hint{padding:7px 8px 2px;font-size:10.5px;line-height:1.5;color:var(--faint);border-top:1px solid var(--line);margin-top:6px}
+#nodeToolbar{
+  position:fixed;transform:translateX(-50%);z-index:40;display:flex;gap:2px;
+  background:#20242E;border-radius:10px;padding:4px;
+  box-shadow:0 10px 30px rgba(16,24,40,.28);opacity:0;pointer-events:none;transition:opacity .12s;
+}
+#nodeToolbar.show{opacity:1;pointer-events:auto}
+.nt-btn{width:28px;height:28px;border:0;background:transparent;border-radius:7px;color:#C9CEDA;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.nt-btn:hover{background:rgba(255,255,255,.14);color:#fff}
+.nt-btn svg{width:15px;height:15px}
+.p-head{display:flex;align-items:center;gap:6px}
+.p-title{font-size:14.5px;font-weight:600}
+.pbtn{
+  width:26px;height:26px;border:0;background:transparent;border-radius:8px;color:#8C95A6;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,color .15s;
+}
+.pbtn:hover{background:#F2F3F7;color:#4B5563}
+.pbtn.on{color:var(--accent);background:var(--accent-soft)}
+.pbtn svg{width:14px;height:14px}
+.p-head .spacer{flex:1}
+.p-hint{font-size:11.5px;color:var(--faint);margin:5px 0 10px}
+.p-search{display:flex;align-items:center;gap:7px;background:#F2F3F7;border-radius:10px;height:36px;padding:0 11px;color:#98A1B1}
+.p-search svg{width:15px;height:15px;flex:none}
+.p-search input{border:0;background:transparent;outline:0;font-size:12.5px;flex:1;color:var(--ink);font-family:inherit}
+.p-search input::placeholder{color:#A3ABB9}
+.atom-row{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;cursor:pointer;margin-top:2px;transition:background .15s}
+.atom-row:hover{background:#F6F7FA}
+.a-ico{width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;justify-content:center}
+.a-ico svg{width:17px;height:17px}
+.a-body{flex:1;min-width:0}
+.a-name{font-size:13px;font-weight:600}
+.a-count{font-size:11.5px;color:var(--faint);font-weight:500;margin-left:5px}
+.a-desc{font-size:11px;color:var(--faint);margin-top:2px}
+.a-chev{color:#B9C0CC;flex:none}
+.a-chev svg{width:15px;height:15px}
+
+/* ---------- 底部工具条（简化：纯图标） ---------- */
+.dock{
+  position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:20;
+  display:flex;align-items:center;gap:2px;background:#fff;border-radius:14px;padding:7px;
+  box-shadow:0 12px 34px rgba(16,24,40,.12),0 1px 2px rgba(16,24,40,.06);
+}
+.d-sep{width:1px;height:20px;background:var(--line);margin:0 6px;flex:none}
+.dbtn{
+  width:34px;height:34px;border:0;background:transparent;border-radius:9px;flex:none;
+  display:flex;align-items:center;justify-content:center;color:#5B6472;cursor:pointer;
+  transition:background .15s,color .15s,transform .1s;
+}
+.dbtn:hover{background:#F2F3F7}
+.dbtn:active{transform:scale(.94)}
+.dbtn.active{background:var(--accent-soft);color:var(--accent)}
+.dbtn.dark{background:#1B1D23;color:#fff}
+.dbtn.dark:hover{background:#2A2D36}
+.dbtn.primary{background:var(--accent);color:#fff}
+.dbtn.primary:hover{background:#3F5CE0}
+.dbtn svg{width:17px;height:17px}
+#zoomLabel{width:46px;text-align:center;font-size:12px;color:#5B6472;font-variant-numeric:tabular-nums;user-select:none;flex:none}
+
+/* ---------- 右下状态胶囊（简化：详情移入悬浮提示） ---------- */
+.status{
+  position:fixed;right:18px;bottom:18px;z-index:20;
+  display:flex;align-items:center;gap:8px;background:#fff;border-radius:999px;height:36px;padding:0 15px;
+  font-size:12px;color:#5B6472;box-shadow:0 10px 30px rgba(16,24,40,.10),0 1px 2px rgba(16,24,40,.06);
+}
+.s-dot{width:8px;height:8px;border-radius:50%;background:#9AA3B3;flex:none}
+.s-sep{width:1px;height:12px;background:var(--line)}
+.s-tip{
+  position:absolute;right:0;bottom:calc(100% + 10px);
+  background:#20242E;color:#fff;font-size:11.5px;padding:8px 12px;border-radius:10px;white-space:nowrap;
+  opacity:0;transform:translateY(3px);transition:opacity .15s,transform .15s;pointer-events:none;
+  box-shadow:0 10px 30px rgba(16,24,40,.25);
+}
+.status:hover .s-tip{opacity:1;transform:none}
+</style>
+</head>
+<body>
+
+<!-- 画布 -->
+<div class="canvas">
+  <div class="world-wrap" id="worldWrap">
+    <div class="world" id="world">
+      <svg id="edges" width="1620" height="600" viewBox="0 0 1620 600"></svg>
+
+      <div class="node" style="left:40px;top:150px;width:200px">
+        <div class="n-head">
+        <span class="n-ico tint-sky"><svg class="i" viewBox="0 0 24 24"><path d="M8 4.5h8M12 4.5v15M8 19.5h8"/></svg></span>
+          <span class="n-title">会议转写</span><span class="n-tag tint-sky">输入</span>
+        </div>
+        <div class="n-meta">运行时填写 · 必填</div>
+        <div class="n-meta">启动时：会议转写</div>
+        <span class="port r" data-id="n1-r0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port r" data-id="n1-r1" style="top:60px"><span class="p-dot c-teal"></span><span class="p-lab">文件</span></span>
+      </div>
+
+      <div class="node" style="left:300px;top:150px;width:206px">
+        <div class="n-head">
+          <span class="n-ico tint-indigo"><svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg></span>
+          <span class="n-title">纪要</span><span class="n-tag tint-indigo">平台模型</span>
+        </div>
+        <div class="n-meta">执行：平台模型（默认）</div>
+        <div class="n-meta">超时 10 分钟</div>
+        <span class="port l" data-id="n2-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n2-l1" style="top:60px"><span class="p-dot c-teal"></span><span class="p-lab">文件</span></span>
+        <span class="port r" data-id="n2-r0" style="top:42px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+      </div>
+
+      <div class="node" style="left:580px;top:40px;width:206px">
+        <div class="n-head">
+          <span class="n-ico tint-indigo"><svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg></span>
+          <span class="n-title">存档</span><span class="n-tag tint-indigo">平台模型</span>
+        </div>
+        <div class="n-meta">执行：平台模型（默认）</div>
+        <div class="n-meta">超时 10 分钟</div>
+        <span class="port l" data-id="n3-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n3-l1" style="top:60px"><span class="p-dot c-teal"></span><span class="p-lab">文件</span></span>
+        <span class="port r" data-id="n3-r0" style="top:42px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+      </div>
+
+      <div class="node" style="left:580px;top:262px;width:206px">
+        <div class="n-head">
+          <span class="n-ico tint-indigo"><svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg></span>
+          <span class="n-title">拆待办</span><span class="n-tag tint-indigo">平台模型</span>
+        </div>
+        <div class="n-meta">执行：平台模型（默认）</div>
+        <div class="n-meta">超时 10 分钟</div>
+        <span class="port l" data-id="n4-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n4-l1" style="top:60px"><span class="p-dot c-teal"></span><span class="p-lab">文件</span></span>
+        <span class="port r" data-id="n4-r0" style="top:42px"><span class="p-dot c-blue"></span><span class="p-lab">文本 +2</span></span>
+        <span class="port r" data-id="n4-r1" style="top:78px"><span class="p-dot c-amber"></span><span class="p-lab">敏回</span></span>
+      </div>
+
+      <div class="node" style="left:858px;top:150px;width:214px">
+        <div class="n-head">
+          <span class="n-ico tint-amber"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg></span>
+          <span class="n-title">决策确认</span><span class="n-tag tint-amber">人</span>
+        </div>
+        <div class="n-meta">签字人：丁明</div>
+        <div class="n-meta">24 小时内同意即通过</div>
+        <div class="n-meta">超时未处理：流程结束</div>
+        <span class="port l" data-id="n5-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n5-l1" style="top:58px"><span class="p-dot c-blue"></span><span class="p-lab">文本 +2</span></span>
+        <span class="port r" data-id="n5-r0" style="top:40px"><span class="p-dot c-blue"></span><span class="p-lab">通过</span></span>
+        <span class="port r" data-id="n5-r1" style="top:88px"><span class="p-dot c-amber"></span><span class="p-lab">敏回</span></span>
+      </div>
+
+      <div class="node" style="left:1146px;top:150px;width:190px">
+        <div class="n-head">
+          <span class="n-ico tint-indigo"><svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg></span>
+          <span class="n-title">结果回写</span><span class="n-tag tint-indigo">平台模型</span>
+        </div>
+        <div class="n-meta">执行：平台模型（默认）</div>
+        <div class="n-meta">超时 10 分钟</div>
+        <span class="port l" data-id="n6-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n6-l1" style="top:60px"><span class="p-dot c-teal"></span><span class="p-lab">文件</span></span>
+        <span class="port r" data-id="n6-r0" style="top:42px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+      </div>
+
+      <div class="node" style="left:1410px;top:150px;width:196px">
+        <div class="n-head">
+          <span class="n-ico tint-green"><svg class="i" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11.5l-2.8 3.8 2.8 3.8H6"/></svg></span>
+          <span class="n-title">流程结果</span><span class="n-tag tint-green">输出</span>
+        </div>
+        <div class="n-meta">汇总上游 · 判为成功</div>
+        <div class="n-meta">所有上游完成后结束</div>
+        <span class="port l" data-id="n7-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">文本</span></span>
+        <span class="port l" data-id="n7-l1" style="top:60px"><span class="p-dot c-blue"></span><span class="p-lab">文本 +3</span></span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 左侧：原子四大分类（独立一级入口） -->
+<nav class="cat-rail" id="catRail">
+  <button class="cat-btn" data-cat="input" title="输入">
+    <svg class="i" viewBox="0 0 24 24"><path d="M8 4.5h8M12 4.5v15M8 19.5h8"/></svg>
+    <span>输入</span>
+  </button>
+  <button class="cat-btn" data-cat="ai" title="AI 处理">
+    <svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg>
+    <span>AI 处理</span>
+  </button>
+  <button class="cat-btn" data-cat="human" title="人">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>
+    <span>人</span>
+  </button>
+  <button class="cat-btn" data-cat="out" title="输出">
+    <svg class="i" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11.5l-2.8 3.8 2.8 3.8H6"/></svg>
+    <span>输出</span>
+  </button>
+</nav>
+<aside class="cat-pop closed" id="catPop"></aside>
+
+<!-- 资源 一级：图标 Dock（开放式，左右切换） -->
+<aside class="res-dock closed" id="resDock">
+  <button class="rd-arrow" id="rdPrev" title="向左">
+    <svg class="i" viewBox="0 0 24 24"><path d="m14.5 6-6 6 6 6"/></svg>
+  </button>
+  <div class="rd-track" id="rdTrack">
+    <button class="rd-item" data-res="skill" title="技能">
+      <span class="rd-circle g-indigo">
+        <svg class="i" viewBox="0 0 24 24"><path d="M12 3.5c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z"/><path d="M18 14.5c.25 1.45.8 2 2.25 2.25-1.45.25-2 .8-2.25 2.25-.25-1.45-.8-2-2.25-2.25 1.45-.25 2-.8 2.25-2.25Z"/></svg>
+        <span class="rd-badge">0</span>
+      </span>
+      <span class="rd-label">技能</span>
+    </button>
+    <button class="rd-item" data-res="conn" title="连接器">
+      <span class="rd-circle g-sky">
+        <svg class="i" viewBox="0 0 24 24"><path d="M9 3.5V7M15 3.5V7"/><path d="M7 7h10v3.2a5 5 0 0 1-10 0V7Z"/><path d="M12 15.2v5.3"/></svg>
+        <span class="rd-badge">0</span>
+      </span>
+      <span class="rd-label">连接器</span>
+    </button>
+    <button class="rd-item" data-res="tpl" title="模板">
+      <span class="rd-circle g-amber">
+        <svg class="i" viewBox="0 0 24 24"><path d="M7 3.5h10V21l-5-3.8L7 21V3.5Z"/></svg>
+        <span class="rd-badge">0</span>
+      </span>
+      <span class="rd-label">模板</span>
+    </button>
+    <button class="rd-item" data-res="market" title="公司市场">
+      <span class="rd-circle g-green">
+        <svg class="i" viewBox="0 0 24 24"><path d="M4 9.5 5.2 5h13.6L20 9.5"/><path d="M5.5 9.5V20h13V9.5"/><path d="M10 20v-4.5h4V20"/></svg>
+        <span class="rd-badge">0</span>
+      </span>
+      <span class="rd-label">公司市场</span>
+    </button>
+  </div>
+  <button class="rd-arrow" id="rdNext" title="向右">
+    <svg class="i" viewBox="0 0 24 24"><path d="m9.5 6 6 6-6 6"/></svg>
+  </button>
+</aside>
+
+<!-- 资源 二级：敞开式卡片网格 -->
+<aside class="res-pop closed" id="resPanel">
+  <div class="rp-head">
+    <span class="rp-title">资源</span>
+    <label class="p-search">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.4-4.4"/></svg>
+      <input id="resSearch" type="text" placeholder="搜索技能、连接器和模板">
+    </label>
+    <button class="pbtn" id="btnPin2" data-pin title="固定面板">
+      <svg class="i" viewBox="0 0 24 24"><path d="M9.5 3.5h5l-.8 5.5 2.8 3H7.5l2.8-3-.8-5.5Z"/><path d="M12 12v8"/></svg>
+    </button>
+    <button class="pbtn" id="btnClose2" title="收起">
+      <svg class="i" viewBox="0 0 24 24"><path d="m6.5 6.5 11 11M17.5 6.5l-11 11"/></svg>
+    </button>
+  </div>
+  <div class="rp-tabs" id="rpTabs">
+    <button class="rp-tab active" data-tab="skill">技能</button>
+    <button class="rp-tab" data-tab="conn">连接器</button>
+    <button class="rp-tab" data-tab="tpl">模板</button>
+    <button class="rp-tab" data-tab="market">公司市场</button>
+  </div>
+  <div class="rp-grid" id="rpGrid"></div>
+</aside>
+
+<!-- 底部工具条：图标化 -->
+<div class="dock">
+  <button class="dbtn active" title="我的流程">
+    <svg class="i" viewBox="0 0 24 24"><path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h3.6l2 2.2h7.4A2.5 2.5 0 0 1 21 9.7v7.8A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5v-10Z"/></svg>
+  </button>
+  <button class="dbtn" title="AI 对话">
+    <svg class="i" viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4V6.5Z"/></svg>
+  </button>
+  <button class="dbtn" title="预览">
+    <svg class="i" viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
+  <button class="dbtn primary" title="运行">
+    <svg viewBox="0 0 24 24"><path d="M8.5 5.8v12.4a.6.6 0 0 0 .9.5l9.6-6.2a.6.6 0 0 0 0-1L9.4 5.3a.6.6 0 0 0-.9.5Z" fill="currentColor"/></svg>
+  </button>
+  <button class="dbtn" id="btnRes" title="资源">
+    <svg class="i" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+  </button>
+  <button class="dbtn" title="设置">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg>
+  </button>
+  <span class="d-sep"></span>
+  <button class="dbtn" id="zoomOut" title="缩小">
+    <svg class="i" viewBox="0 0 24 24"><path d="M6 12h12"/></svg>
+  </button>
+  <span id="zoomLabel">69%</span>
+  <button class="dbtn" id="zoomIn" title="放大">
+    <svg class="i" viewBox="0 0 24 24"><path d="M12 6v12M6 12h12"/></svg>
+  </button>
+  <span class="d-sep"></span>
+  <button class="dbtn" title="撤销">
+    <svg class="i" viewBox="0 0 24 24"><path d="M8.5 13.5 4 9l4.5-4.5"/><path d="M4 9h9.5a6 6 0 0 1 0 12H10"/></svg>
+  </button>
+  <button class="dbtn" title="重做">
+    <svg class="i" viewBox="0 0 24 24"><path d="M15.5 13.5 20 9l-4.5-4.5"/><path d="M20 9h-9.5a6 6 0 0 0 0 12H14"/></svg>
+  </button>
+</div>
+
+<!-- 右下状态：胶囊 + 悬浮详情 -->
+<div class="status">
+  <span class="s-dot"></span><span>待运行</span>
+  <i class="s-sep"></i><span>7 步 · 7 条连线</span>
+  <div class="s-tip">作者 丁明 · 创建于 2026-10-19 09:14 · 1 项运行时填写</div>
+</div>
+
+<!-- 画布节点：选中后的迷你工具条（放入画布后的新交互） -->
+<div id="nodeToolbar">
+  <button class="nt-btn" id="tbConfig" title="行内配置">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.6M12 18.6v2.6M2.8 12h2.6M18.6 12h2.6M5.5 5.5l1.8 1.8M16.7 16.7l1.8 1.8M18.5 5.5l-1.8 1.8M7.3 16.7l-1.8 1.8"/></svg>
+  </button>
+  <button class="nt-btn" id="tbCopy" title="复制">
+    <svg class="i" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>
+  </button>
+  <button class="nt-btn" id="tbDel" title="删除">
+    <svg class="i" viewBox="0 0 24 24"><path d="M4.5 7h15"/><path d="M9.5 7V4.5h5V7"/><path d="M6.5 7l.8 13h9.4l.8-13"/></svg>
+  </button>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+/* ---------- 连线（动态：节点可拖拽/增删，连线实时重绘） ---------- */
+let EDGES = [
+  {a:'n1-r0',b:'n2-l0'}, {a:'n1-r1',b:'n2-l1'},
+  {a:'n2-r0',b:'n3-l0'}, {a:'n2-r0',b:'n4-l0'},
+  {a:'n3-r0',b:'n5-l0'}, {a:'n4-r0',b:'n5-l1'},
+  {a:'n5-r0',b:'n6-l0'}, {a:'n6-r0',b:'n7-l0'},
+];
+function drawEdges(){
+  const wr = world.getBoundingClientRect();
+  const s = wr.width / 1620;
+  const cache = {};
+  const grab = id => {
+    if(!(id in cache)){
+      const dot = document.querySelector(`[data-id="${id}"] .p-dot`);
+      if(!dot) return null;
+      const r = dot.getBoundingClientRect();
+      cache[id] = { x:(r.left + r.width/2 - wr.left)/s, y:(r.top + r.height/2 - wr.top)/s };
+    }
+    return cache[id];
+  };
+  EDGES = EDGES.filter(e => grab(e.a) && grab(e.b));
+  let html = '';
+  EDGES.forEach(e=>{
+    let p1 = grab(e.a), p2 = grab(e.b);
+    if(p1.x > p2.x){ const t = p1; p1 = p2; p2 = t; }
+    const dx = Math.max(46,(p2.x - p1.x)/2);
+    html += `<path d="M${p1.x} ${p1.y} C ${p1.x+dx} ${p1.y}, ${p2.x-dx} ${p2.y}, ${p2.x} ${p2.y}"/>`;
+  });
+  svg.innerHTML = html;
+}
+
+/* ---------- 缩放 ---------- */
+let scale = .69;
+function applyScale(){
+  $('#worldWrap').style.transform = `translate(-50%,-50%) scale(${scale})`;
+  $('#zoomLabel').textContent = Math.round(scale*100) + '%';
+}
+$('#zoomIn').onclick  = ()=>{ scale = Math.min(1.4, scale + .08); applyScale(); };
+$('#zoomOut').onclick = ()=>{ scale = Math.max(.4,  scale - .08); applyScale(); };
+
+/* ---------- 左侧：原子四大分类（一级，点击展开原子清单） ---------- */
+const CATS = {
+  input: { name:'输入',    count:4,  tint:'tint-sky',    svg:'<svg class="i" viewBox="0 0 24 24"><path d="M8 4.5h8M12 4.5v15M8 19.5h8"/></svg>', items:['文本','图片','网盘文件','群消息'] },
+  ai:    { name:'AI 处理', count:50, tint:'tint-indigo', svg:'<svg class="i" viewBox="0 0 24 24"><rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/></svg>', items:['平台模型','Agent','专家'] },
+  human: { name:'人',      count:28, tint:'tint-amber',  svg:'<svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/></svg>', items:['签字','审批'] },
+  out:   { name:'输出',    count:3,  tint:'tint-green',  svg:'<svg class="i" viewBox="0 0 24 24"><path d="M6 21V4"/><path d="M6 5h11.5l-2.8 3.8 2.8 3.8H6"/></svg>', items:['发到群','存网盘','流程结果'] },
+};
+let uidSeq = 0;
+const catRail = $('#catRail'), catPop = $('#catPop');
+let activeCat = null;
+function closeCat(){
+  activeCat = null;
+  catPop.classList.add('closed');
+  $$('.cat-btn').forEach(b=>b.classList.remove('active'));
+}
+function placeCatPop(btn){
+  const br = btn.getBoundingClientRect(), rr = catRail.getBoundingClientRect();
+  catPop.style.left = (rr.right + 10) + 'px';
+  catPop.style.top  = Math.max(16, Math.min(br.top - 10, window.innerHeight - 280)) + 'px';
+}
+catRail.addEventListener('click', e=>{
+  const btn = e.target.closest('.cat-btn');
+  if(!btn) return;
+  const key = btn.dataset.cat;
+  if(activeCat === key && !catPop.classList.contains('closed')){ closeCat(); return; }
+  activeCat = key;
+  $$('.cat-btn').forEach(b=>b.classList.toggle('active', b === btn));
+  const c = CATS[key];
+  let html = `<div class="cp-head">${c.name}<span class="cp-count">${c.count}</span></div>`
+           + c.items.map(it=>`<div class="cp-item" data-name="${it}"><span class="cp-dot"></span>${it}</div>`).join('');
+  if(c.count > c.items.length) html += `<div class="cp-more">查看全部 ${c.count} 个</div>`;
+  html += `<div class="cp-hint">点击放入画布 · 放入后：拖拽移动 / 拖端口连线 / 双击改名</div>`;
+  catPop.innerHTML = html;
+  catPop.querySelectorAll('.cp-item').forEach(it=> it.addEventListener('click', ()=> addNode(key, it.dataset.name)));
+  catPop.classList.remove('closed');
+  placeCatPop(btn);
+});
+
+/* ---------- 资源两级：① 图标 Dock → ② 卡片网格 ---------- */
+const resPanel = $('#resPanel'), resDock = $('#resDock'), btnRes = $('#btnRes');
+const rdTrack  = $('#rdTrack');
+function placePopover(){
+  const r = btnRes.getBoundingClientRect(), w = resPanel.offsetWidth || 600;
+  let cx = r.left + r.width / 2;
+  cx = Math.max(w/2 + 16, Math.min(cx, window.innerWidth - w/2 - 16));
+  resPanel.style.left = cx + 'px';
+}
+function openResDock(){
+  resPanel.classList.add('closed');
+  resDock.classList.remove('closed');
+  btnRes.classList.add('active');
+  requestAnimationFrame(updateArrows);
+}
+function openResGrid(key){
+  if(key) setResTab(key);
+  resDock.classList.add('closed');
+  resPanel.classList.remove('closed');
+  btnRes.classList.add('active');
+  placePopover();
+}
+function closeRes(){
+  resDock.classList.add('closed');
+  resPanel.classList.add('closed');
+  btnRes.classList.remove('active');
+}
+btnRes.onclick = ()=>{
+  if(!resPanel.classList.contains('closed'))      openResDock();  // 二级 → 回到一级
+  else if(resDock.classList.contains('closed'))   openResDock();  // 关闭态 → 打开一级
+  else                                            closeRes();     // 一级 → 关闭
+};
+$('#btnClose2').onclick = closeRes;
+
+/* 固定 */
+$$('.pbtn[data-pin]').forEach(b=>b.onclick = ()=>b.classList.toggle('on'));
+
+/* ---------- 资源敞开面板：Tab 左右切换 + 搜索 + 点击放入画布 ---------- */
+const RES_ICONS = {
+  doc:      '<path d="M7 3h7l4 4v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z"/><path d="M14 3v4h4"/>',
+  table:    '<rect x="4" y="5" width="16" height="14" rx="2"/><path d="M4 10h16M10 10v9"/>',
+  sparkles: '<path d="M12 3.5c.5 2.9 1.6 4 4.5 4.5-2.9.5-4 1.6-4.5 4.5-.5-2.9-1.6-4-4.5-4.5 2.9-.5 4-1.6 4.5-4.5Z"/><path d="M18 14.5c.25 1.45.8 2 2.25 2.25-1.45.25-2 .8-2.25 2.25-.25-1.45-.8-2-2.25-2.25 1.45-.25 2-.8 2.25-2.25Z"/>',
+  zap:      '<path d="M13 2 4.5 13.5H11L9.5 22 19 10h-6.5L13 2Z"/>',
+  db:       '<ellipse cx="12" cy="5.5" rx="7" ry="2.5"/><path d="M5 5.5v13c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5v-13"/><path d="M5 12c0 1.4 3.1 2.5 7 2.5s7-1.1 7-2.5"/>',
+  chat:     '<path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H9l-5 4V6.5Z"/>',
+  check:    '<path d="M5 12.5 10 17.5 19 7"/>',
+  user:     '<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/>',
+  bot:      '<rect x="4.5" y="8.5" width="15" height="11" rx="3"/><path d="M12 8.5V5.5"/><circle cx="12" cy="4.5" r="1.2"/><circle cx="9.3" cy="13.5" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="13.5" r="1.1" fill="currentColor" stroke="none"/>',
+};
+const RES = {
+  skill:  { name:'技能', items:[
+    { n:'网页摘要', d:'抓取链接 · 生成要点',   icon:'doc',      tint:'tint-indigo' },
+    { n:'会议纪要', d:'转写稿提炼待办',       icon:'sparkles', tint:'tint-sky'    },
+    { n:'数据清洗', d:'表格去重与标准化',     icon:'table',    tint:'tint-green'  },
+    { n:'翻译助手', d:'多语言互译',           icon:'zap',      tint:'tint-amber'  },
+    { n:'合同审查', d:'风险条款识别',         icon:'doc',      tint:'tint-indigo' },
+    { n:'周报汇总', d:'多源汇报合并成卡',     icon:'table',    tint:'tint-sky'    },
+  ]},
+  conn:   { name:'连接器', items:[
+    { n:'飞书文档',   d:'文档读写与评论',   icon:'doc',   tint:'tint-sky'    },
+    { n:'企业微信',   d:'群消息收发',       icon:'chat',  tint:'tint-green'  },
+    { n:'MySQL',      d:'数据库查询',       icon:'db',    tint:'tint-indigo' },
+    { n:'多维表格',   d:'行级读写',         icon:'table', tint:'tint-amber'  },
+    { n:'飞书审批',   d:'发起与监听审批',   icon:'check', tint:'tint-sky'    },
+    { n:'钉钉',       d:'组织与消息同步',   icon:'chat',  tint:'tint-green'  },
+  ]},
+  tpl:    { name:'模板', items:[
+    { n:'会议 → 待办', d:'转写稿自动拆任务', icon:'bot',   tint:'tint-indigo' },
+    { n:'周报汇总',     d:'多源汇报合并成卡', icon:'table', tint:'tint-sky'    },
+    { n:'审批流',       d:'签字审批闭环',     icon:'user',  tint:'tint-amber'  },
+  ]},
+  market: { name:'公司市场', items:[
+    { n:'专家咨询',     d:'领域专家接入',     icon:'user',      tint:'tint-indigo' },
+    { n:'数据分析技能', d:'报表与归因',       icon:'sparkles',  tint:'tint-sky'    },
+    { n:'ERP 连接器',   d:'主数据同步',       icon:'db',        tint:'tint-green'  },
+    { n:'电脑 AI 助手', d:'本机操作代理',     icon:'bot',       tint:'tint-amber'  },
+  ]},
+};
+const rpGrid = $('#rpGrid'), rpTabs = $('#rpTabs');
+let resTab = 'skill';
+function renderRes(key){
+  resTab = key;
+  const arr = RES[key].items;
+  rpGrid.innerHTML = arr.length ? arr.map(it=>`
+    <div class="rp-card" data-name="${it.n}" data-key="${(it.n + ' ' + it.d).toLowerCase()}">
+      <span class="a-ico ${it.tint}"><svg class="i" viewBox="0 0 24 24">${RES_ICONS[it.icon]}</svg></span>
+      <span class="rp-body"><div class="rp-name">${it.n}</div><div class="rp-desc">${it.d}</div></span>
+      <span class="rp-add">放入画布</span>
+    </div>`).join('') : '<div class="rp-empty">暂无内容 · 去公司市场逛逛</div>';
+}
+function setResTab(key){
+  $$('.rp-tab').forEach(t=>t.classList.toggle('active', t.dataset.tab === key));
+  $('#resSearch').value = '';
+  renderRes(key);
+}
+rpTabs.addEventListener('click', e=>{
+  const tab = e.target.closest('.rp-tab');
+  if(!tab) return;
+  setResTab(tab.dataset.tab);
+});
+rpGrid.addEventListener('click', e=>{
+  const card = e.target.closest('.rp-card');
+  if(!card) return;
+  const it = RES[resTab].items.find(x=>x.n === card.dataset.name);
+  if(!it) return;
+  createNode({ title:it.n, tag:RES[resTab].name, tint:it.tint, svg:`<svg class="i" viewBox="0 0 24 24">${RES_ICONS[it.icon]}</svg>` });
+});
+$('#resSearch').addEventListener('input', e=>{
+  const v = e.target.value.trim().toLowerCase();
+  $$('#rpGrid .rp-card').forEach(c=>{
+    c.style.display = c.dataset.key.includes(v) ? '' : 'none';
+  });
+});
+renderRes('skill');
+
+/* Dock：角标数量 / 左右箭头 / 图标点击进入二级 */
+$$('#rdTrack .rd-item').forEach(b=>{
+  b.querySelector('.rd-badge').textContent = RES[b.dataset.res].items.length;
+  b.addEventListener('click', ()=>openResGrid(b.dataset.res));
+});
+function updateArrows(){
+  const max = rdTrack.scrollWidth - rdTrack.clientWidth;
+  $('#rdPrev').classList.toggle('dim', rdTrack.scrollLeft <= 1);
+  $('#rdNext').classList.toggle('dim', rdTrack.scrollLeft >= max - 1);
+}
+$('#rdPrev').onclick = ()=>rdTrack.scrollBy({left:-140, behavior:'smooth'});
+$('#rdNext').onclick = ()=>rdTrack.scrollBy({left:140, behavior:'smooth'});
+rdTrack.addEventListener('scroll', updateArrows);
+updateArrows();
+
+/* 点外部 / Esc 关闭 */
+document.addEventListener('click', e=>{
+  if(e.target.closest('.res-pop') || e.target.closest('.res-dock') || e.target.closest('.cat-rail') || e.target.closest('.cat-pop') || e.target.closest('#btnRes')) return;
+  closeCat();
+  closeRes();
+});
+document.addEventListener('keydown', e=>{
+  if(e.key !== 'Escape') return;
+  closeCat();
+  deselect();
+  closeRes();
+});
+window.addEventListener('resize', ()=>{
+  if(!resPanel.classList.contains('closed')) placePopover();
+  if(activeCat){
+    const btn = document.querySelector('.cat-btn.active');
+    if(btn) placeCatPop(btn);
+  }
+});
+
+/* ==========================================================
+   画布节点交互：放入画布后，交互逻辑改变
+   库里(左侧分类)：点击 = 放入画布
+   画布上：拖拽移动 · 拖端口连线 · 单击选中(迷你工具条)
+           双击改标题 · ⚙ 行内配置 · ⧉ 复制 · 🗑 删除
+   ========================================================== */
+const world = $('#world'), svg = $('#edges');
+let selected = null, drag = null, conn = null;
+
+const tb = $('#nodeToolbar');
+function positionToolbar(){
+  if(!selected) return;
+  const r = selected.getBoundingClientRect();
+  tb.style.left = (r.left + r.width/2) + 'px';
+  tb.style.top  = (r.top - 46) + 'px';
+}
+function select(el){
+  deselect();
+  selected = el;
+  el.classList.add('selected');
+  tb.classList.add('show');
+  positionToolbar();
+}
+function deselect(){
+  if(selected){
+    selected.classList.remove('selected','editing');
+    selected.querySelectorAll('[contenteditable]').forEach(m=>m.removeAttribute('contenteditable'));
+    selected = null;
+  }
+  tb.classList.remove('show');
+}
+function portPos(id){
+  const dot = document.querySelector(`[data-id="${id}"] .p-dot`);
+  const wr = world.getBoundingClientRect();
+  const s = wr.width / 1620;
+  const r = dot.getBoundingClientRect();
+  return { x:(r.left + r.width/2 - wr.left)/s, y:(r.top + r.height/2 - wr.top)/s };
+}
+function createNode(o){
+  const id = 'u' + (++uidSeq);
+  const el = document.createElement('div');
+  el.className = 'node'; el.dataset.id = id;
+  el.style.left = (620 + (uidSeq % 4) * 40) + 'px';
+  el.style.top  = (430 + (uidSeq % 3) * 28) + 'px';
+  el.style.width = '190px';
+  el.innerHTML = `
+    <div class="n-head">
+      <span class="n-ico ${o.tint}">${o.svg}</span>
+      <span class="n-title">${o.title}</span>
+      <span class="n-tag ${o.tint}">${o.tag}</span>
+    </div>
+    <div class="n-meta">拖拽移动 · 双击标题改名</div>
+    <div class="n-meta">从端口拖出可连线</div>
+    <span class="port l" data-id="${id}-l0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">入</span></span>
+    <span class="port r" data-id="${id}-r0" style="top:24px"><span class="p-dot c-blue"></span><span class="p-lab">出</span></span>`;
+  world.appendChild(el);
+  return el;
+}
+function addNode(catKey, atomName){
+  const c = CATS[catKey];
+  return createNode({ title:atomName, tag:c.name, tint:c.tint, svg:c.svg });
+}
+function duplicateNode(src){
+  const oldId = src.dataset.id;
+  const el = src.cloneNode(true);
+  const id = 'u' + (++uidSeq);
+  el.dataset.id = id;
+  el.querySelectorAll('.port').forEach(p=> p.dataset.id = id + p.dataset.id.slice(oldId.length));
+  el.style.left = (parseFloat(src.style.left) + 36) + 'px';
+  el.style.top  = (parseFloat(src.style.top)  + 32) + 'px';
+  el.classList.remove('selected','editing');
+  el.querySelectorAll('[contenteditable]').forEach(m=>m.removeAttribute('contenteditable'));
+  world.appendChild(el);
+  return el;
+}
+function deleteNode(el){
+  const id = el.dataset.id || '';
+  EDGES = EDGES.filter(e => !e.a.startsWith(id + '-') && !e.b.startsWith(id + '-'));
+  el.remove();
+  drawEdges();
+}
+
+/* 拖拽移动 / 拖端口连线 / 空白取消 */
+world.addEventListener('mousedown', e=>{
+  e.stopPropagation();
+  const port = e.target.closest('.port');
+  if(port){ conn = { from: port.dataset.id }; e.preventDefault(); return; }
+  const node = e.target.closest('.node');
+  if(node){
+    if(e.target.closest('.n-title[contenteditable="true"]')) return;
+    const s = world.getBoundingClientRect().width / 1620;
+    drag = { node, sx:e.clientX, sy:e.clientY, ox:parseFloat(node.style.left), oy:parseFloat(node.style.top), s, moved:false };
+    e.preventDefault();
+    return;
+  }
+  deselect();
+});
+document.querySelector('.canvas').addEventListener('mousedown', ()=> deselect());
+
+document.addEventListener('mousemove', e=>{
+  if(drag){
+    const dx = (e.clientX - drag.sx)/drag.s, dy = (e.clientY - drag.sy)/drag.s;
+    if(!drag.moved && Math.abs(dx) + Math.abs(dy) > 3){ drag.moved = true; drag.node.classList.add('dragging'); }
+    if(drag.moved){
+      drag.node.style.left = (drag.ox + dx) + 'px';
+      drag.node.style.top  = (drag.oy + dy) + 'px';
+      positionToolbar();
+      drawEdges();
+    }
+  } else if(conn){
+    drawEdges();
+    const wr = world.getBoundingClientRect();
+    const s = wr.width / 1620;
+    const p1 = portPos(conn.from);
+    const cx = (e.clientX - wr.left)/s, cy = (e.clientY - wr.top)/s;
+    const dir = cx >= p1.x ? 1 : -1;
+    const dx = Math.max(40, Math.abs(cx - p1.x)/2) * dir;
+    svg.insertAdjacentHTML('beforeend',
+      `<path class="temp-edge" d="M${p1.x} ${p1.y} C ${p1.x+dx} ${p1.y}, ${cx-dx} ${cy}, ${cx} ${cy}"/>`);
+  }
+});
+document.addEventListener('mouseup', e=>{
+  if(drag){
+    const node = drag.node, moved = drag.moved;
+    node.classList.remove('dragging');
+    drag = null;
+    if(!moved) select(node);
+  }
+  if(conn){
+    let target = null, best = 20;
+    $$('.port').forEach(p=>{
+      if(p.dataset.id === conn.from) return;
+      const d = p.querySelector('.p-dot').getBoundingClientRect();
+      const dist = Math.hypot(e.clientX - (d.left + d.width/2), e.clientY - (d.top + d.height/2));
+      if(dist < best){ best = dist; target = p.dataset.id; }
+    });
+    if(target){
+      const fromEl = document.querySelector(`[data-id="${conn.from}"]`);
+      const a = fromEl.classList.contains('r') ? conn.from : target;
+      const b = (a === conn.from) ? target : conn.from;
+      if(a !== b && !EDGES.some(x => x.a === a && x.b === b)) EDGES.push({a, b});
+    }
+    conn = null;
+    drawEdges();
+  }
+});
+
+/* 双击标题：行内改名 */
+world.addEventListener('dblclick', e=>{
+  const t = e.target.closest('.n-title');
+  if(!t) return;
+  t.setAttribute('contenteditable','true');
+  t.focus();
+  const rng = document.createRange(); rng.selectNodeContents(t);
+  const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rng);
+  t.addEventListener('blur', ()=>{
+    t.removeAttribute('contenteditable');
+    if(!t.textContent.trim()) t.textContent = '未命名节点';
+  }, {once:true});
+  t.addEventListener('keydown', ev=>{ if(ev.key === 'Enter'){ ev.preventDefault(); t.blur(); } });
+});
+
+/* 迷你工具条：⚙ 行内配置 / ⧉ 复制 / 🗑 删除 */
+$('#tbConfig').onclick = ()=>{
+  if(!selected) return;
+  const editing = selected.classList.toggle('editing');
+  selected.querySelectorAll('.n-meta').forEach(m=> editing ? m.setAttribute('contenteditable','true') : m.removeAttribute('contenteditable'));
+};
+$('#tbCopy').onclick = ()=>{ if(selected) select(duplicateNode(selected)); };
+$('#tbDel').onclick  = ()=>{ if(selected){ const el = selected; deselect(); deleteNode(el); } };
+
+/* 缩放时工具条跟随 */
+const _applyScale = applyScale;
+applyScale = function(){ _applyScale(); if(selected) positionToolbar(); };
+
+/* 便于预览：#res 直达资源浮层 */
+if(location.hash === '#res') openResDock();
+if(location.hash.startsWith('#cat=')){
+  const btn = document.querySelector(`.cat-btn[data-cat="${location.hash.slice(5)}"]`);
+  if(btn) btn.click();
+}
+
+window.addEventListener('load', ()=>{ applyScale(); drawEdges(); setTimeout(drawEdges, 60); });
+</script>
+</body>
+</html>

@@ -1,0 +1,545 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="二元AI 自然语言工作流交互原型">
+  <title>二元AI · 流程工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2317202e'/%3E%3Cpath d='M8 10h16l-5 6H8zm0 7h16l-5 6H8z' fill='white'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-sparkles" viewBox="0 0 24 24">
+      <path d="m12 3-1.9 5.1L5 10l5.1 1.9L12 17l1.9-5.1L19 10l-5.1-1.9L12 3Z"/>
+      <path d="M5 3v4M3 5h4M19 17v4M17 19h4"/>
+    </symbol>
+    <symbol id="i-arrow-right" viewBox="0 0 24 24">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </symbol>
+    <symbol id="i-chevron-down" viewBox="0 0 24 24">
+      <path d="m6 9 6 6 6-6"/>
+    </symbol>
+    <symbol id="i-chevron-left" viewBox="0 0 24 24">
+      <path d="m15 18-6-6 6-6"/>
+    </symbol>
+    <symbol id="i-search" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3"/>
+    </symbol>
+    <symbol id="i-workflow" viewBox="0 0 24 24">
+      <rect width="8" height="8" x="3" y="3" rx="2"/>
+      <path d="M7 11v4a2 2 0 0 0 2 2h4"/>
+      <rect width="8" height="8" x="13" y="13" rx="2"/>
+    </symbol>
+    <symbol id="i-box" viewBox="0 0 24 24">
+      <path d="m21 8-9-5-9 5 9 5 9-5Z"/>
+      <path d="m3 8 9 5 9-5M3 16l9 5 9-5M3 12l9 5 9-5"/>
+    </symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M12 7v5l3 2"/>
+    </symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24">
+      <path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3"/>
+      <path d="M1 14h6M9 8h6M17 16h6"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="i-x" viewBox="0 0 24 24">
+      <path d="M18 6 6 18M6 6l12 12"/>
+    </symbol>
+    <symbol id="i-check" viewBox="0 0 24 24">
+      <path d="m20 6-11 11-5-5"/>
+    </symbol>
+    <symbol id="i-alert" viewBox="0 0 24 24">
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+      <path d="M12 9v4M12 17h.01"/>
+    </symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24">
+      <rect width="18" height="11" x="3" y="11" rx="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24">
+      <path d="M20 21a8 8 0 0 0-16 0"/>
+      <circle cx="12" cy="7" r="4"/>
+    </symbol>
+    <symbol id="i-cpu" viewBox="0 0 24 24">
+      <rect width="16" height="16" x="4" y="4" rx="2"/>
+      <rect width="6" height="6" x="9" y="9" rx="1"/>
+      <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>
+    </symbol>
+    <symbol id="i-database" viewBox="0 0 24 24">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M3 5v14c0 1.7 4 3 9 3s9-1.3 9-3V5M3 12c0 1.7 4 3 9 3s9-1.3 9-3"/>
+    </symbol>
+    <symbol id="i-play" viewBox="0 0 24 24">
+      <path d="m7 4 13 8-13 8V4Z"/>
+    </symbol>
+    <symbol id="i-save" viewBox="0 0 24 24">
+      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/>
+      <path d="M17 21v-8H7v8M7 3v5h8"/>
+    </symbol>
+    <symbol id="i-code" viewBox="0 0 24 24">
+      <path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/>
+    </symbol>
+    <symbol id="i-zoom-in" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3M11 8v6M8 11h6"/>
+    </symbol>
+    <symbol id="i-zoom-out" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.3-4.3M8 11h6"/>
+    </symbol>
+    <symbol id="i-maximize" viewBox="0 0 24 24">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/>
+    </symbol>
+    <symbol id="i-more" viewBox="0 0 24 24">
+      <circle cx="5" cy="12" r="1"/>
+      <circle cx="12" cy="12" r="1"/>
+      <circle cx="19" cy="12" r="1"/>
+    </symbol>
+    <symbol id="i-file" viewBox="0 0 24 24">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/>
+      <path d="M14 2v6h6M8 13h8M8 17h5"/>
+    </symbol>
+    <symbol id="i-image" viewBox="0 0 24 24">
+      <rect width="18" height="18" x="3" y="3" rx="2"/>
+      <circle cx="9" cy="9" r="2"/>
+      <path d="m21 15-5-5L5 21"/>
+    </symbol>
+    <symbol id="i-video" viewBox="0 0 24 24">
+      <path d="m16 13 5.2 3.5a.5.5 0 0 0 .8-.4V7.9a.5.5 0 0 0-.8-.4L16 11"/>
+      <rect width="14" height="14" x="2" y="5" rx="2"/>
+    </symbol>
+    <symbol id="i-audio" viewBox="0 0 24 24">
+      <path d="M9 18V5l12-2v13"/>
+      <circle cx="6" cy="18" r="3"/>
+      <circle cx="18" cy="16" r="3"/>
+    </symbol>
+    <symbol id="i-panel" viewBox="0 0 24 24">
+      <rect width="18" height="18" x="3" y="3" rx="2"/>
+      <path d="M15 3v18"/>
+    </symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24">
+      <path d="M3 7v6h6"/>
+      <path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-7.5 4L3 13"/>
+    </symbol>
+  </svg>
+
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">
+          <span></span><span></span>
+        </div>
+        <div>
+          <strong>二元AI</strong>
+          <span>流程工作台</span>
+        </div>
+      </div>
+      <div class="project-heading">
+        <button class="icon-button subtle" aria-label="返回流程列表">
+          <svg><use href="#i-chevron-left"></use></svg>
+        </button>
+        <div>
+          <div class="project-title-row">
+            <h1 id="project-title">妆舟 01.1 视频生成流程</h1>
+            <span class="status-badge warning" id="draft-status">待确认</span>
+          </div>
+          <p id="project-subtitle">13 个节点 · 可编辑 · 测试仅使用样例数据</p>
+        </div>
+      </div>
+      <div class="topbar-actions">
+        <button class="button ghost" id="run-button">
+          <svg><use href="#i-play"></use></svg>
+          演示运行
+        </button>
+        <button class="button primary" id="save-button">
+          <svg><use href="#i-save"></use></svg>
+          保存草案
+        </button>
+        <button class="icon-button" aria-label="更多操作">
+          <svg><use href="#i-more"></use></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <aside class="rail" id="sidebar">
+        <div class="rail-top">
+          <button class="new-flow-button" id="new-flow-button">
+            <svg><use href="#i-sparkles"></use></svg>
+            <span>新建工作流</span>
+          </button>
+          <nav class="main-nav" aria-label="主导航">
+            <button class="nav-item active" data-view="builder">
+              <svg><use href="#i-workflow"></use></svg>
+              <span>流程编排</span>
+            </button>
+            <button class="nav-item" data-view="palette">
+              <svg><use href="#i-box"></use></svg>
+              <span>资源库</span>
+              <span class="nav-count">24</span>
+            </button>
+            <button class="nav-item muted" data-view="runs">
+              <svg><use href="#i-clock"></use></svg>
+              <span>运行记录</span>
+            </button>
+          </nav>
+        </div>
+
+        <section class="rail-section generation-progress" aria-labelledby="progress-title">
+          <div class="section-label">
+            <span id="progress-title">生成进度</span>
+            <span class="tiny muted">第 1 版</span>
+          </div>
+          <ol class="progress-list" id="progress-list">
+            <li class="complete"><span>1</span><div><strong>理解业务目标</strong><small>已识别要准备和交付的内容</small></div></li>
+            <li class="complete"><span>2</span><div><strong>拆分工作步骤</strong><small>13 个节点已自动配置</small></div></li>
+            <li class="complete warning"><span>3</span><div><strong>补全业务信息</strong><small>4 项信息需要确认</small></div></li>
+            <li class="complete warning"><span>4</span><div><strong>检查流程</strong><small>可编辑和演示，尚未正式运行</small></div></li>
+          </ol>
+        </section>
+
+        <section class="rail-section" aria-labelledby="palette-title">
+          <div class="section-label">
+            <span id="palette-title">可调用资源</span>
+            <button class="text-button" id="open-palette-button">查看全部</button>
+          </div>
+          <div class="resource-quicklist">
+            <button class="resource-quick" data-resource-group="material">
+              <span class="resource-icon amber"><svg><use href="#i-box"></use></svg></span>
+            <span><strong>资料读取</strong><small>3 个可用</small></span>
+              <svg class="chevron"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <button class="resource-quick" data-resource-group="process">
+              <span class="resource-icon blue"><svg><use href="#i-cpu"></use></svg></span>
+            <span><strong>处理步骤</strong><small>8 个可用</small></span>
+              <svg class="chevron"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <button class="resource-quick" data-resource-group="tool">
+              <span class="resource-icon teal"><svg><use href="#i-code"></use></svg></span>
+            <span><strong>执行能力</strong><small>7 个可用</small></span>
+              <svg class="chevron"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <button class="resource-quick" data-resource-group="human">
+              <span class="resource-icon coral"><svg><use href="#i-user"></use></svg></span>
+            <span><strong>真人确认</strong><small>2 个可用</small></span>
+              <svg class="chevron"><use href="#i-chevron-down"></use></svg>
+            </button>
+            <button class="resource-quick" data-resource-group="workflow">
+              <span class="resource-icon violet"><svg><use href="#i-workflow"></use></svg></span>
+            <span><strong>已有流程</strong><small>4 个可用</small></span>
+              <svg class="chevron"><use href="#i-chevron-down"></use></svg>
+            </button>
+          </div>
+        </section>
+
+        <section class="rail-section draft-summary">
+          <div class="section-label"><span>当前流程</span></div>
+          <dl>
+            <div><dt>节点</dt><dd>13 个</dd></div>
+            <div><dt>真人确认</dt><dd>3 次</dd></div>
+            <div><dt>预计交付</dt><dd>30 秒成片</dd></div>
+          </dl>
+        </section>
+      </aside>
+
+      <section class="workspace" aria-label="工作流编辑区">
+        <div class="workspace-toolbar">
+          <div class="view-switcher" role="tablist" aria-label="视图切换">
+            <button class="active" data-view-mode="canvas" role="tab" aria-selected="true">
+              <svg><use href="#i-workflow"></use></svg>流程画布
+            </button>
+            <button data-view-mode="matrix" role="tab" aria-selected="false">
+              <svg><use href="#i-database"></use></svg>节点清单
+            </button>
+          </div>
+          <div class="toolbar-divider"></div>
+          <button class="toolbar-text" id="fit-view-button">
+            <svg><use href="#i-maximize"></use></svg>适应画布
+          </button>
+          <div class="toolbar-spacer"></div>
+          <button class="icon-button subtle" id="undo-button" aria-label="撤销">
+            <svg><use href="#i-undo"></use></svg>
+          </button>
+          <div class="zoom-control" aria-label="画布缩放">
+            <button id="zoom-out" aria-label="缩小"><svg><use href="#i-zoom-out"></use></svg></button>
+            <span id="zoom-value">100%</span>
+            <button id="zoom-in" aria-label="放大"><svg><use href="#i-zoom-in"></use></svg></button>
+          </div>
+          <button class="validation-chip warning" id="validation-button">
+            <svg><use href="#i-alert"></use></svg>
+            <span id="validation-button-label">校验待执行</span>
+          </button>
+        </div>
+
+        <div class="canvas-scroller" id="canvas-container">
+          <div class="canvas" id="canvas">
+            <div class="canvas-meta">
+              <span><svg><use href="#i-lock"></use></svg>可编辑草案</span>
+              <span id="registry-id">资料与真实执行能力尚未连接</span>
+            </div>
+            <div class="flow-summary">
+              <div>
+                <p class="eyebrow">已生成的流程</p>
+                <h2>主播排期到 30 秒成片</h2>
+                <p>从排期和资料开始，经过脚本确认、素材确认和成片验收，最终得到可播放的 30 秒视频。</p>
+              </div>
+              <div class="summary-metrics">
+                <div><strong>13</strong><span>工作节点</span></div>
+                <div><strong>3</strong><span>真人确认</span></div>
+                <div><strong>6</strong><span>镜头实例</span></div>
+              </div>
+            </div>
+
+            <div class="flow-stage" data-stage="intent">
+              <div class="stage-heading">
+                <span class="stage-index">01</span>
+                <div><strong>理解与脚本</strong><small>读取资料 · 生成脚本 · 真人确认</small></div>
+              </div>
+              <div class="stage-track" id="track-intent"></div>
+            </div>
+            <div class="flow-stage" data-stage="assets">
+              <div class="stage-heading">
+                <span class="stage-index">02</span>
+                <div><strong>制作画面</strong><small>逐镜生成 · 整理素材 · 真人确认</small></div>
+              </div>
+              <div class="stage-track" id="track-assets"></div>
+            </div>
+            <div class="flow-stage" data-stage="generation">
+              <div class="stage-heading">
+                <span class="stage-index">03</span>
+                <div><strong>生成视频</strong><small>提交任务 · 取回片段 · 检查旁白</small></div>
+              </div>
+              <div class="stage-track" id="track-generation"></div>
+            </div>
+            <div class="flow-stage" data-stage="delivery">
+              <div class="stage-heading">
+                <span class="stage-index">04</span>
+                <div><strong>合成与交付</strong><small>合成成片 · 检查画面音轨 · 最终验收</small></div>
+              </div>
+              <div class="stage-track" id="track-delivery"></div>
+            </div>
+            <svg class="edge-layer" id="edge-layer" aria-hidden="true"></svg>
+          </div>
+
+          <section class="matrix-view hidden" id="matrix-view" aria-labelledby="matrix-title">
+            <div class="matrix-header">
+              <div>
+                <p class="eyebrow">节点清单</p>
+                <h2 id="matrix-title">每个节点准备什么、产出什么</h2>
+              </div>
+              <label class="search-field">
+                <svg><use href="#i-search"></use></svg>
+                <input id="matrix-search" type="search" placeholder="搜索节点、内容或能力">
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>节点</th>
+                    <th>处理方式</th>
+                    <th>输入</th>
+                    <th>输出</th>
+                    <th>能力</th>
+                    <th>状态</th>
+                  </tr>
+                </thead>
+                <tbody id="matrix-body"></tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <aside class="inspector hidden" id="inspector" aria-label="节点配置">
+        <div class="inspector-head">
+          <div>
+            <p class="eyebrow" id="inspector-type">流程 Agent</p>
+            <h2 id="inspector-name">生成脚本方案</h2>
+            <span class="node-version" id="inspector-version">01.1-V02 · 示例版本 · 发布状态未校验</span>
+          </div>
+          <button class="icon-button" id="close-inspector" aria-label="关闭详情">
+            <svg><use href="#i-x"></use></svg>
+          </button>
+        </div>
+        <div class="inspector-tabs" role="tablist">
+          <button class="active" data-inspector-tab="summary" role="tab">节点概览</button>
+          <button data-inspector-tab="advanced" role="tab">高级编辑</button>
+        </div>
+        <div class="inspector-body" id="inspector-body"></div>
+      </aside>
+    </main>
+
+    <div class="validation-panel" id="validation-panel" aria-label="校验报告">
+      <div class="panel-backdrop" data-close-panel="validation"></div>
+      <section class="panel-sheet">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">合同校验</p>
+            <h2>草案可以保存，但还不能运行</h2>
+          </div>
+          <button class="icon-button" data-close-panel="validation" aria-label="关闭">
+            <svg><use href="#i-x"></use></svg>
+          </button>
+        </div>
+        <div class="validation-hero">
+          <div class="validation-score">
+            <strong id="validation-score">0/8</strong>
+            <span id="validation-score-label">静态结构项通过</span>
+          </div>
+          <p id="validation-summary">正在基于当前草案计算结构检查。保存和预览不会创建运行申请。</p>
+        </div>
+        <dl class="validation-hashes" id="validation-hashes" aria-label="校验报告绑定哈希"></dl>
+        <div class="validation-list" id="validation-list"></div>
+        <div class="panel-footnote">
+          <svg><use href="#i-lock"></use></svg>
+          <span>原型外部调用状态为 not_run；静态实现边界不能替代平台执行证据。</span>
+        </div>
+      </section>
+    </div>
+
+    <div class="resource-panel" id="resource-panel" aria-label="资源库">
+      <div class="panel-backdrop" data-close-panel="resource"></div>
+      <section class="panel-sheet wide">
+        <div class="panel-head">
+          <div>
+            <p class="eyebrow">已授权资源</p>
+            <h2>从资源库添加节点</h2>
+          </div>
+          <button class="icon-button" data-close-panel="resource" aria-label="关闭">
+            <svg><use href="#i-x"></use></svg>
+          </button>
+        </div>
+        <div class="resource-layout">
+          <nav class="resource-categories" id="resource-categories">
+            <button class="active" data-category="material">生产资料 Agent</button>
+            <button data-category="process">流程 Agent</button>
+            <button data-category="tool">AI 工具</button>
+            <button data-category="human">Human</button>
+            <button data-category="workflow">工作流</button>
+          </nav>
+          <div class="resource-results">
+            <label class="search-field large">
+              <svg><use href="#i-search"></use></svg>
+              <input id="resource-search" type="search" placeholder="搜索名称或能力">
+            </label>
+            <div id="resource-grid" class="resource-grid"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="new-flow-modal" id="new-flow-modal" role="dialog" aria-modal="true" aria-labelledby="new-flow-title">
+      <div class="panel-backdrop" data-close-modal="new-flow"></div>
+      <section class="new-flow-dialog">
+        <button class="icon-button modal-close" data-close-modal="new-flow" aria-label="关闭">
+          <svg><use href="#i-x"></use></svg>
+        </button>
+        <div class="new-flow-intro">
+          <span class="prompt-mark"><svg><use href="#i-sparkles"></use></svg></span>
+          <p class="eyebrow">自然语言生成</p>
+          <h2 id="new-flow-title">告诉我你想完成什么</h2>
+          <p>用平时说话的方式写清已有资料、最终结果和必须由人确认的地方，系统会自动拆成可编辑的工作流程。</p>
+        </div>
+        <label class="prompt-box">
+          <span class="sr-only">工作流需求</span>
+          <textarea id="prompt-input" rows="6">根据主播排期、主播资料和商品资料，制作一条 30 秒竖版短视频。要求六个镜头、商品信息必须来自资料，脚本和素材包需要人工确认，最终成片由真人验收；不要自动发布。</textarea>
+          <span class="prompt-footer">
+            <span><svg><use href="#i-lock"></use></svg>生成时不会运行或对外操作</span>
+            <span id="prompt-count">88 / 1200</span>
+          </span>
+        </label>
+        <div class="prompt-examples">
+          <span>快速开始</span>
+          <button data-example="video">妆舟视频生成</button>
+          <button data-example="review">内容审核流程</button>
+          <button data-example="inventory">库存巡检流程</button>
+        </div>
+        <div class="modal-actions">
+          <div class="zero-side-effect">
+            <svg><use href="#i-check"></use></svg>
+            <span>只生成可编辑流程，不会发布内容或产生费用</span>
+          </div>
+          <button class="button primary large" id="generate-button">
+            生成工作流程
+            <svg><use href="#i-arrow-right"></use></svg>
+          </button>
+        </div>
+        <div class="generation-conflict hidden" id="generation-conflict">
+          <div>
+            <strong>当前草案含人工编辑</strong>
+            <p>重新生成不会覆盖已保存历史，但需要明确选择本次处理方式。</p>
+          </div>
+          <div class="generation-conflict-actions">
+            <button class="button" id="generate-new-draft">另建草案</button>
+            <button class="button danger" id="generate-overwrite">确认覆盖</button>
+          </div>
+        </div>
+        <div class="generation-overlay hidden" id="generation-overlay">
+          <div class="generation-spinner"><span></span><span></span><span></span></div>
+          <strong id="generation-message">正在识别输入与输出…</strong>
+          <small>只分析需求，不调用媒体、付费或业务写回能力</small>
+        </div>
+      </section>
+    </div>
+
+    <section class="run-console hidden" id="run-console" aria-live="polite">
+      <header>
+        <div>
+          <span class="eyebrow">演示运行 · 不调用真实模型、媒体或业务工具</span>
+          <h2 id="run-console-title">流程测试运行</h2>
+        </div>
+        <button class="icon-button subtle" id="close-run-console" aria-label="关闭测试结果">
+          <svg><use href="#i-x"></use></svg>
+        </button>
+      </header>
+      <div class="run-console-body">
+        <div class="run-console-summary">
+          <span id="run-console-status">准备运行</span>
+          <strong id="run-console-progress">0 / 0</strong>
+        </div>
+        <div class="run-progress-track"><span id="run-progress-bar"></span></div>
+        <div id="run-console-list" class="run-console-list"></div>
+      </div>
+    </section>
+
+    <button class="flow-chat-toggle" id="flow-chat-toggle" aria-controls="flow-chat-panel" aria-expanded="false">
+      <svg><use href="#i-sparkles"></use></svg>
+      与流程对话
+    </button>
+    <aside class="flow-chat-panel" id="flow-chat-panel" aria-label="流程对话">
+      <header>
+        <div>
+          <span class="eyebrow">流程共创</span>
+          <strong>直接修改当前草案</strong>
+        </div>
+        <button class="icon-button subtle" id="close-flow-chat" aria-label="收起流程对话">
+          <svg><use href="#i-x"></use></svg>
+        </button>
+      </header>
+      <label class="chat-scope">
+        <span>对话范围</span>
+        <select id="chat-scope-select"></select>
+      </label>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-suggestions">
+        <button data-chat-suggestion="把当前节点模型改为 文本执行 Agent">更换模型</button>
+        <button data-chat-suggestion="停用旁白检测">停用节点</button>
+        <button data-chat-suggestion="测试运行这个流程">测试运行</button>
+      </div>
+      <form class="chat-compose" id="flow-chat-form">
+        <textarea id="flow-chat-input" rows="2" maxlength="600" placeholder="例如：停用旁白检测，或把当前节点的执行方式改为文案生成助手"></textarea>
+        <button class="button primary" type="submit">发送</button>
+      </form>
+    </aside>
+
+    <div class="toast-region" id="toast-region" aria-live="polite"></div>
+  </div>
+  <script src="./app.js"></script>
+</body>
+</html>

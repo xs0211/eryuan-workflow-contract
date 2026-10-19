@@ -1,0 +1,18 @@
+# Runtime and local tooling
+.env
+.env.*
+node_modules/
+tmp/
+
+# Generated browser evidence and transfer artifacts
+prototype/qa/
+prototype/qa-public/
+collab-inbox/
+*.bundle
+*.log
+*.zip
+
+# Local editor and OS files
+.DS_Store
+*.swp
+*~

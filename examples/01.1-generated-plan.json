@@ -1,0 +1,956 @@
+{
+  "schemaVersion": "binary-ai.nl-workflow/0.1",
+  "generationId": "gen-01.1-review-001",
+  "status": "needs_clarification",
+  "intent": {
+    "intentId": "intent-01.1-review-001",
+    "businessGoal": "根据已确认的主播排期制作一条可播放的30秒短视频成片",
+    "inputs": [
+      {
+        "portId": "schedule",
+        "label": "主播排期",
+        "schemaRef": "ScheduleSnapshot@1.0.0",
+        "required": true,
+        "cardinality": "one",
+        "origin": "ai_proposed",
+        "sourceKind": "resource_ref"
+      },
+      {
+        "portId": "talentMaterials",
+        "label": "主播资料与参考图",
+        "schemaRef": "TalentMaterialPackage@1.0.0",
+        "required": true,
+        "cardinality": "one",
+        "origin": "ai_proposed",
+        "sourceKind": "resource_ref"
+      },
+      {
+        "portId": "productMaterials",
+        "label": "商品资料与参考图",
+        "schemaRef": "ProductMaterialPackage@1.0.0",
+        "required": true,
+        "cardinality": "one",
+        "origin": "ai_proposed",
+        "sourceKind": "resource_ref"
+      }
+    ],
+    "outputs": [
+      {
+        "portId": "master",
+        "label": "最终成片主版本",
+        "schemaRef": "MasterMediaCandidate@1.0.0",
+        "required": true,
+        "cardinality": "one",
+        "origin": "ai_proposed",
+        "acceptanceSummary": "6个唯一镜头组成的可播放成片，音轨与时长检查完成，并由真人验收"
+      }
+    ],
+    "constraints": {
+      "deadline": null,
+      "budget": {
+        "currency": null,
+        "limit": null,
+        "enforcement": "requires_approval"
+      },
+      "prohibitedActions": [
+        "fabricate_product_claims",
+        "paid_call_without_approval",
+        "resubmit_when_outcome_unknown",
+        "publish",
+        "business_writeback"
+      ]
+    },
+    "requiredHumanDecisions": [
+      "approve_script",
+      "approve_frozen_material_package",
+      "accept_final_master"
+    ],
+    "sourcePromptHash": "sha256:252149a79c47d0c1d677b7b3b3707f755eb98703c1e4172e04d0b46817507717"
+  },
+  "registrySnapshot": {
+    "snapshotId": "review-static-01.1-v0.1",
+    "resolvedAt": "2026-10-18T06:20:00Z",
+    "actorId": "review-user",
+    "tenantId": "binary-ai-review",
+    "capabilityRegistryLayer": "unresolved",
+    "atomVersions": [
+      "01.1-V01@0.3.0",
+      "01.1-V02@0.3.0",
+      "01.1-H02@0.3.0",
+      "01.1-V03@0.3.0",
+      "01.1-V04@0.3.0",
+      "01.1-V05@0.3.0",
+      "01.1-H05@0.3.0",
+      "01.1-V06@0.3.0",
+      "01.1-V07@0.3.0",
+      "01.1-V08@0.3.0",
+      "01.1-V09@0.3.0",
+      "01.1-V10@0.3.0",
+      "01.1-H10@0.3.0"
+    ],
+    "capabilityBindings": [
+      {
+        "bindingId": "test-text-generation",
+        "capabilityId": "text.generate",
+        "adapterVersion": "0.1.0",
+        "environment": "test",
+        "authorized": true,
+        "externalWrite": false,
+        "paid": false,
+        "bindingKind": "model",
+        "placement": "executor",
+        "sideEffectClass": "none",
+        "allowedTransitiveToolIds": [],
+        "credentialsPlatformManaged": true,
+        "health": "unknown"
+      },
+      {
+        "bindingId": "blocked-image-generation",
+        "capabilityId": "image.generate",
+        "adapterVersion": "0.1.0",
+        "environment": "test",
+        "authorized": false,
+        "externalWrite": false,
+        "paid": false,
+        "bindingKind": "connector",
+        "placement": "module_binding",
+        "sideEffectClass": "non_idempotent_write",
+        "allowedTransitiveToolIds": [],
+        "credentialsPlatformManaged": true,
+        "health": "unavailable"
+      },
+      {
+        "bindingId": "blocked-video-submit",
+        "capabilityId": "video.submit",
+        "adapterVersion": "0.1.0",
+        "environment": "test",
+        "authorized": false,
+        "externalWrite": true,
+        "paid": true,
+        "bindingKind": "connector",
+        "placement": "module_binding",
+        "sideEffectClass": "paid_submit",
+        "allowedTransitiveToolIds": [],
+        "credentialsPlatformManaged": true,
+        "health": "unavailable"
+      }
+    ],
+    "knowledgeBases": [],
+    "workflowVersions": []
+  },
+  "plan": {
+    "workflowId": "wf-zhz-01.1-review",
+    "workflowVersion": "0.1.0",
+    "revision": 1,
+    "registrySnapshotId": "review-static-01.1-v0.1",
+    "atoms": [
+      {
+        "instanceId": "v01",
+        "atomId": "01.1-V01",
+        "atomVersion": "0.3.0",
+        "templateVersion": "atom.universal@1.0.0",
+        "businessCategory": "production_material",
+        "paletteResourceGroup": "production_material_agent",
+        "inputs": [
+          {
+            "portId": "productionRequest",
+            "label": "制作任务与源素材",
+            "schemaRef": "ProductionRequest@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "outputs": [
+          {
+            "portId": "taskRecord",
+            "label": "任务记录",
+            "schemaRef": "TaskRecord@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "modules": {
+          "input": {
+            "action": "绑定并冻结制作请求与源素材",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "InputManifest@1.0.0",
+            "failureExits": [
+              "blocked",
+              "changes_required"
+            ]
+          },
+          "check": {
+            "action": "验证身份、排期、文件字节与哈希",
+            "executorRef": "platform-policy",
+            "capabilityBindingIds": [],
+            "outputSchema": "CheckResult@1.0.0",
+            "failureExits": [
+              "blocked",
+              "retryable_failure"
+            ]
+          },
+          "execute": {
+            "action": "创建幂等 TaskRecord",
+            "executorRef": "deterministic",
+            "capabilityBindingIds": [],
+            "outputSchema": "TaskRecord@1.0.0",
+            "failureExits": [
+              "blocked",
+              "retryable_failure",
+              "unknown_outcome"
+            ]
+          },
+          "review": {
+            "action": "按规则审核任务记录完整性",
+            "executorRef": "rule-reviewer",
+            "capabilityBindingIds": [],
+            "outputSchema": "ReviewDecision@1.0.0",
+            "failureExits": [
+              "blocked",
+              "changes_required"
+            ]
+          },
+          "output": {
+            "action": "读取回执并输出 TaskRecord",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "TaskRecord@1.0.0",
+            "failureExits": [
+              "blocked",
+              "retryable_failure"
+            ]
+          }
+        },
+        "capabilityBindings": [],
+        "humanReview": {
+          "required": false,
+          "reviewerBinding": null,
+          "reviewedArtifactPort": null,
+          "decisionOutputPort": null
+        }
+      },
+      {
+        "instanceId": "v02",
+        "atomId": "01.1-V02",
+        "atomVersion": "0.3.0",
+        "templateVersion": "atom.universal@1.0.0",
+        "businessCategory": "processing_agent",
+        "paletteResourceGroup": "process_agent",
+        "inputs": [
+          {
+            "portId": "taskRecord",
+            "label": "有效任务记录",
+            "schemaRef": "TaskRecord@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "outputs": [
+          {
+            "portId": "scriptProposal",
+            "label": "脚本候选",
+            "schemaRef": "ScriptProposal@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "modules": {
+          "input": {
+            "action": "绑定任务、主播事实和商品事实",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "InputManifest@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          },
+          "check": {
+            "action": "验证事实来源与禁止声明",
+            "executorRef": "rule-checker",
+            "capabilityBindingIds": [],
+            "outputSchema": "CheckResult@1.0.0",
+            "failureExits": [
+              "blocked",
+              "changes_required"
+            ]
+          },
+          "execute": {
+            "action": "生成六镜脚本候选",
+            "executorRef": "text-agent",
+            "capabilityBindingIds": [
+              "test-text-generation"
+            ],
+            "outputSchema": "ScriptProposal@1.0.0",
+            "failureExits": [
+              "retryable_failure",
+              "blocked"
+            ]
+          },
+          "review": {
+            "action": "执行自动质量规则检查",
+            "executorRef": "rule-reviewer",
+            "capabilityBindingIds": [],
+            "outputSchema": "ReviewDecision@1.0.0",
+            "failureExits": [
+              "changes_required",
+              "blocked"
+            ]
+          },
+          "output": {
+            "action": "输出脚本ID、版本和哈希并等待H02",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "ScriptProposal@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          }
+        },
+        "capabilityBindings": [
+          {
+            "module": "execute",
+            "bindingId": "test-text-generation",
+            "required": true
+          }
+        ],
+        "humanReview": {
+          "required": true,
+          "reviewerBinding": "H02",
+          "reviewedArtifactPort": "scriptProposal",
+          "decisionOutputPort": "approvedScript"
+        }
+      },
+      {
+        "instanceId": "h02",
+        "atomId": "01.1-H02",
+        "atomVersion": "0.3.0",
+        "templateVersion": "atom.universal@1.0.0",
+        "businessCategory": "human_decision",
+        "paletteResourceGroup": "human",
+        "inputs": [
+          {
+            "portId": "scriptProposal",
+            "label": "待审脚本",
+            "schemaRef": "ScriptProposal@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "outputs": [
+          {
+            "portId": "approvedScript",
+            "label": "脚本批准记录",
+            "schemaRef": "HumanDecision@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "modules": {
+          "input": {
+            "action": "绑定待审脚本ID、版本和哈希",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "InputManifest@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          },
+          "check": {
+            "action": "验证审核人身份、权限和运行状态",
+            "executorRef": "platform-auth",
+            "capabilityBindingIds": [],
+            "outputSchema": "CheckResult@1.0.0",
+            "failureExits": [
+              "blocked",
+              "expired"
+            ]
+          },
+          "execute": {
+            "action": "由真实审核人选择通过、退回或拒绝",
+            "executorRef": "human-reviewer",
+            "capabilityBindingIds": [],
+            "outputSchema": "HumanDecision@1.0.0",
+            "failureExits": [
+              "changes_required",
+              "cancelled"
+            ]
+          },
+          "review": {
+            "action": "平台验证决定与申请版本一致",
+            "executorRef": "platform-auth",
+            "capabilityBindingIds": [],
+            "outputSchema": "DecisionValidation@1.0.0",
+            "failureExits": [
+              "blocked",
+              "expired"
+            ]
+          },
+          "output": {
+            "action": "输出绑定精确脚本版本的批准记录",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "HumanDecision@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          }
+        },
+        "capabilityBindings": [],
+        "humanReview": {
+          "required": true,
+          "reviewerBinding": null,
+          "reviewedArtifactPort": "scriptProposal",
+          "decisionOutputPort": "approvedScript"
+        }
+      },
+      {
+        "instanceId": "v03",
+        "atomId": "01.1-V03",
+        "atomVersion": "0.3.0",
+        "templateVersion": "atom.universal@1.0.0",
+        "businessCategory": "processing_agent",
+        "paletteResourceGroup": "process_agent",
+        "inputs": [
+          {
+            "portId": "approvedScript",
+            "label": "已批准脚本",
+            "schemaRef": "HumanDecision@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "outputs": [
+          {
+            "portId": "storyboard",
+            "label": "六镜分镜",
+            "schemaRef": "StoryboardPlan@1.0.0",
+            "required": true,
+            "cardinality": "one",
+            "origin": "atom_default"
+          }
+        ],
+        "modules": {
+          "input": {
+            "action": "绑定有效人工批准与精确脚本",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "InputManifest@1.0.0",
+            "failureExits": [
+              "blocked",
+              "expired"
+            ]
+          },
+          "check": {
+            "action": "拒绝缺失、过期或错版本批准",
+            "executorRef": "rule-checker",
+            "capabilityBindingIds": [],
+            "outputSchema": "CheckResult@1.0.0",
+            "failureExits": [
+              "blocked",
+              "changes_required"
+            ]
+          },
+          "execute": {
+            "action": "生成严格六镜分镜",
+            "executorRef": "text-agent",
+            "capabilityBindingIds": [
+              "test-text-generation"
+            ],
+            "outputSchema": "StoryboardPlan@1.0.0",
+            "failureExits": [
+              "retryable_failure",
+              "changes_required"
+            ]
+          },
+          "review": {
+            "action": "拒绝非六镜结果且不截断",
+            "executorRef": "rule-reviewer",
+            "capabilityBindingIds": [],
+            "outputSchema": "ReviewDecision@1.0.0",
+            "failureExits": [
+              "changes_required",
+              "blocked"
+            ]
+          },
+          "output": {
+            "action": "输出稳定shotId和六镜计划",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "StoryboardPlan@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          }
+        },
+        "capabilityBindings": [
+          {
+            "module": "execute",
+            "bindingId": "test-text-generation",
+            "required": true
+          }
+        ],
+        "humanReview": {
+          "required": false,
+          "reviewerBinding": null,
+          "reviewedArtifactPort": null,
+          "decisionOutputPort": null
+        }
+      },
+      {
+        "instanceId": "v04",
+        "atomId": "01.1-V04",
+        "atomVersion": "0.3.0",
+        "templateVersion": "atom.universal@1.0.0",
+        "businessCategory": "processing_agent",
+        "paletteResourceGroup": "process_agent",
+        "inputs": [
+          {
+            "portId": "shotPlan",
+            "label": "单镜图片请求",
+            "schemaRef": "ShotImageRequest@1.0.0",
+            "required": true,
+            "cardinality": "one_or_more",
+            "origin": "atom_default"
+          }
+        ],
+        "outputs": [
+          {
+            "portId": "shotImages",
+            "label": "单镜图片",
+            "schemaRef": "ShotImage@1.0.0",
+            "required": true,
+            "cardinality": "one_or_more",
+            "origin": "atom_default"
+          }
+        ],
+        "modules": {
+          "input": {
+            "action": "按稳定shotId绑定图片请求",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "InputManifest@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          },
+          "check": {
+            "action": "验证参考图、供应商、配额和权限",
+            "executorRef": "platform-policy",
+            "capabilityBindingIds": [],
+            "outputSchema": "CheckResult@1.0.0",
+            "failureExits": [
+              "blocked",
+              "retryable_failure"
+            ]
+          },
+          "execute": {
+            "action": "逐镜生成或修图",
+            "executorRef": "image-agent",
+            "capabilityBindingIds": [
+              "blocked-image-generation"
+            ],
+            "outputSchema": "ShotImage@1.0.0",
+            "failureExits": [
+              "blocked",
+              "retryable_failure",
+              "unknown_outcome"
+            ]
+          },
+          "review": {
+            "action": "读回文件并校验字节哈希",
+            "executorRef": "rule-reviewer",
+            "capabilityBindingIds": [],
+            "outputSchema": "ReviewDecision@1.0.0",
+            "failureExits": [
+              "changes_required",
+              "blocked"
+            ]
+          },
+          "output": {
+            "action": "输出可读回的图片版本",
+            "executorRef": "runtime",
+            "capabilityBindingIds": [],
+            "outputSchema": "ShotImage@1.0.0",
+            "failureExits": [
+              "blocked"
+            ]
+          }
+        },
+        "capabilityBindings": [
+          {
+            "module": "execute",
+            "bindingId": "blocked-image-generation",
+            "required": true
+          }
+        ],
+        "humanReview": {
+          "required": false,
+          "reviewerBinding": null,
+          "reviewedArtifactPort": null,
+          "decisionOutputPort": null
+        }
+      }
+    ],
+    "edges": [
+      {
+        "edgeId": "e-v01-v02-task",
+        "from": {
+          "atomInstanceId": "v01",
+          "portId": "taskRecord"
+        },
+        "to": {
+          "atomInstanceId": "v02",
+          "portId": "taskRecord"
+        },
+        "schemaRef": "TaskRecord@1.0.0",
+        "condition": "success",
+        "required": true
+      },
+      {
+        "edgeId": "e-v02-h02-script",
+        "from": {
+          "atomInstanceId": "v02",
+          "portId": "scriptProposal"
+        },
+        "to": {
+          "atomInstanceId": "h02",
+          "portId": "scriptProposal"
+        },
+        "schemaRef": "ScriptProposal@1.0.0",
+        "condition": "review_required",
+        "required": true
+      },
+      {
+        "edgeId": "e-h02-v03-approved",
+        "from": {
+          "atomInstanceId": "h02",
+          "portId": "approvedScript"
+        },
+        "to": {
+          "atomInstanceId": "v03",
+          "portId": "approvedScript"
+        },
+        "schemaRef": "HumanDecision@1.0.0",
+        "condition": "success",
+        "required": true
+      },
+      {
+        "edgeId": "e-v03-v04-shots",
+        "from": {
+          "atomInstanceId": "v03",
+          "portId": "storyboard"
+        },
+        "to": {
+          "atomInstanceId": "v04",
+          "portId": "shotPlan"
+        },
+        "schemaRef": "StoryboardPlan@1.0.0",
+        "condition": "success",
+        "required": true
+      }
+    ],
+    "externalInputs": [
+      {
+        "atomInstanceId": "v01",
+        "portId": "productionRequest"
+      }
+    ],
+    "workflowOutputs": [
+      {
+        "atomInstanceId": "v04",
+        "portId": "shotImages"
+      }
+    ],
+    "intentCoverage": [
+      {
+        "coverageId": "cover-input-schedule",
+        "requirementKind": "input",
+        "requirementRef": "input:schedule",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v01",
+            "module": "input",
+            "portId": "productionRequest"
+          }
+        ],
+        "validationMethod": "Typed production request binding and artifact identity check",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-input-talent-materials",
+        "requirementKind": "input",
+        "requirementRef": "input:talentMaterials",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v01",
+            "module": "input",
+            "portId": "productionRequest"
+          }
+        ],
+        "validationMethod": "Structured package schema preserves member count, stable keys and dependencies",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-input-product-materials",
+        "requirementKind": "input",
+        "requirementRef": "input:productMaterials",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v01",
+            "module": "input",
+            "portId": "productionRequest"
+          }
+        ],
+        "validationMethod": "Structured package schema preserves member count, stable keys and dependencies",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-output-master",
+        "requirementKind": "output",
+        "requirementRef": "output:master",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v04",
+            "module": "output",
+            "portId": "shotImages"
+          }
+        ],
+        "validationMethod": "Compare workflow output schema and acceptance contract",
+        "status": "conflicting"
+      },
+      {
+        "coverageId": "cover-human-approve-script",
+        "requirementKind": "human_decision",
+        "requirementRef": "human:approve_script",
+        "coveredBy": [
+          {
+            "atomInstanceId": "h02",
+            "module": "output",
+            "portId": "approvedScript"
+          }
+        ],
+        "validationMethod": "Authorized human atom and exact artifact/version/hash approval",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-human-approve-material-package",
+        "requirementKind": "human_decision",
+        "requirementRef": "human:approve_frozen_material_package",
+        "coveredBy": [],
+        "validationMethod": "Require a bound H05 human-decision atom",
+        "status": "missing"
+      },
+      {
+        "coverageId": "cover-human-accept-master",
+        "requirementKind": "human_decision",
+        "requirementRef": "human:accept_final_master",
+        "coveredBy": [],
+        "validationMethod": "Require a bound H10 human-decision atom",
+        "status": "missing"
+      },
+      {
+        "coverageId": "cover-prohibit-fabricated-claims",
+        "requirementKind": "constraint",
+        "requirementRef": "constraint:fabricate_product_claims",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v03",
+            "module": "review"
+          }
+        ],
+        "validationMethod": "Deterministic product-claim review against source materials",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-prohibit-unapproved-paid-call",
+        "requirementKind": "constraint",
+        "requirementRef": "constraint:paid_call_without_approval",
+        "coveredBy": [
+          {
+            "atomInstanceId": "v04",
+            "module": "execute"
+          }
+        ],
+        "validationMethod": "Platform authorization rejects the blocked paid binding",
+        "status": "covered"
+      },
+      {
+        "coverageId": "cover-prohibit-unknown-resubmit",
+        "requirementKind": "constraint",
+        "requirementRef": "constraint:resubmit_when_outcome_unknown",
+        "coveredBy": [],
+        "validationMethod": "Require reconciliation and zero duplicate POST evidence",
+        "status": "missing"
+      },
+      {
+        "coverageId": "cover-prohibit-publish",
+        "requirementKind": "constraint",
+        "requirementRef": "constraint:publish",
+        "coveredBy": [],
+        "validationMethod": "Require a separate disabled publish boundary",
+        "status": "missing"
+      },
+      {
+        "coverageId": "cover-prohibit-business-writeback",
+        "requirementKind": "constraint",
+        "requirementRef": "constraint:business_writeback",
+        "coveredBy": [],
+        "validationMethod": "Require an explicit denied connector scope",
+        "status": "missing"
+      }
+    ],
+    "budget": {
+      "currency": null,
+      "limit": null,
+      "enforcement": "requires_approval"
+    },
+    "governance": {
+      "persistenceTarget": "unresolved",
+      "lifecycleState": "draft",
+      "visibility": "owner",
+      "publicationApprovalRequired": true,
+      "tokenPolicy": {
+        "estimatedTokens": {
+          "min": 2000,
+          "max": 8000
+        },
+        "hardLimit": null,
+        "ledgerRef": null,
+        "payerRef": null,
+        "accountingMode": "undefined",
+        "exhaustionAction": "stop"
+      },
+      "subflowPolicy": {
+        "maxDepth": 3,
+        "cycleCheck": "not_applicable",
+        "subflowRefs": []
+      }
+    },
+    "executionReadiness": {
+      "state": "design_only_not_runnable",
+      "blockingGapIds": [
+        "unbound_source_materials",
+        "typed_artifact_handoff_unverified",
+        "human_approval_binding_unverified",
+        "image_capability_unavailable",
+        "media_space_unavailable"
+      ]
+    }
+  },
+  "validation": {
+    "valid": false,
+    "executionReady": false,
+    "binding": {
+      "intentHash": "sha256:e87c3d2ad8de3a7fae51238b412864de68dcb40132e20539c3ec6b9ffce8483b",
+      "planHash": "sha256:8db1b2a171f4b98b399c528c155b50789bbea39e45af1678635b91be012c2774",
+      "effectiveConfigHash": "sha256:0346932812ce0656a95e931cd36c6d3be9f818d475db13f79bc76d7814050ccf",
+      "validatorVersion": "0.1.0",
+      "validatedAt": "2026-10-18T06:20:00Z"
+    },
+    "issues": [
+      {
+        "issueId": "issue-source-materials",
+        "severity": "error",
+        "code": "REQUIRED_INPUT_UNBOUND",
+        "message": "主播排期、主播资料和商品资料尚未绑定真实artifact ID、version和hash",
+        "path": "$.plan.externalInputs"
+      },
+      {
+        "issueId": "issue-typed-handoff",
+        "severity": "error",
+        "code": "PLATFORM_TYPED_HANDOFF_UNVERIFIED",
+        "message": "Flow 2.0尚未证明按artifact ID/type/version/hash执行下游门禁",
+        "path": "$.plan.executionReadiness"
+      },
+      {
+        "issueId": "issue-human-binding",
+        "severity": "error",
+        "code": "HUMAN_REVIEWER_UNBOUND",
+        "message": "H02需要有权限的真实审核人并绑定精确脚本版本",
+        "path": "$.plan.atoms[2].humanReview"
+      },
+      {
+        "issueId": "issue-image-capability",
+        "severity": "error",
+        "code": "CAPABILITY_UNAVAILABLE",
+        "message": "图片生成绑定未授权或不可用，V04保持阻塞",
+        "path": "$.plan.atoms[4].capabilityBindings[0]"
+      },
+      {
+        "issueId": "issue-intent-coverage",
+        "severity": "error",
+        "code": "INTENT_COVERAGE_INCOMPLETE",
+        "message": "当前局部草案未覆盖H05、H10、最终主版本以及部分禁止动作，只能保存为不可运行草案",
+        "path": "$.plan.intentCoverage"
+      },
+      {
+        "issueId": "issue-sample-scope",
+        "severity": "warning",
+        "code": "SAMPLE_PARTIAL_GRAPH",
+        "message": "此示例只展示V01-V04与H02，用于评审端口和状态模型；完整01.1应生成13个原子",
+        "path": "$.plan.atoms"
+      }
+    ],
+    "layers": {
+      "schema": "passed",
+      "ports": "passed",
+      "graph": "passed",
+      "intent_coverage": "failed",
+      "registry": "passed",
+      "permissions": "failed",
+      "transitive_permissions": "not_checked",
+      "cost": "not_checked",
+      "human_review": "failed",
+      "platform_projection": "failed",
+      "runtime_readiness": "failed"
+    }
+  },
+  "assumptions": [
+    {
+      "assumptionId": "assumption-six-equal-shots",
+      "statement": "用户要求6个等长镜头，当前按01.1参考流程解释为每镜计划5秒",
+      "acceptedByUser": false,
+      "impact": "medium"
+    }
+  ],
+  "questions": [
+    {
+      "questionId": "q-source-artifacts",
+      "question": "请提供可读取的主播排期、主播资料和商品资料artifact ID/version/hash",
+      "blocking": true,
+      "reasonCode": "REQUIRED_INPUT_UNBOUND"
+    },
+    {
+      "questionId": "q-human-reviewers",
+      "question": "H02、H05和H10分别由哪个有权限的真人或岗位审核",
+      "blocking": true,
+      "reasonCode": "HUMAN_REVIEWER_UNBOUND"
+    },
+    {
+      "questionId": "q-budget",
+      "question": "图片和视频能力是否允许付费，硬上限、币种和审批人是什么",
+      "blocking": true,
+      "reasonCode": "COST_POLICY_UNDEFINED"
+    },
+    {
+      "questionId": "q-persistence-target",
+      "question": "本草案最终保存到当前Flow架构V4的哪个对象，还是暂存于生成器草稿层",
+      "blocking": true,
+      "reasonCode": "PERSISTENCE_TARGET_UNRESOLVED"
+    }
+  ],
+  "compiler": {
+    "compilerVersion": "0.1.0",
+    "plannerMode": "model_assisted",
+    "generatedAt": "2026-10-18T06:20:00Z",
+    "outputHash": "sha256:1580a5583c35c19fea17095de6978d5391b51b87c271ecd9a84e9f36d56691ef"
+  }
+}
