@@ -1,0 +1,24 @@
+--- prototype/desktop-qa.cjs@9ed527f
++++ prototype/desktop-qa.cjs@reviewer-patched
+@@ -79,7 +79,8 @@
+     const box = await page.locator("#relay-composer").boundingBox();
+     assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= 1440 && box.y + box.height <= 1000);
+     assert(await page.locator("#relay-chat-input").isVisible());
+-    const drawer = await page.locator("#relay-inspector-panel:visible").boundingBox();
++    const drawerLocator = page.locator("#relay-inspector-panel");
++    const drawer = await drawerLocator.isVisible() ? await drawerLocator.boundingBox() : null;
+     if (drawer) assert(drawer.y + drawer.height < box.y, "Drawer must not cover permanent composer");
+     return box;
+   };
+@@ -253,9 +254,9 @@
+     const handle = page.locator('[data-drag-node="' + before.nodes[0].id + '"]');
+     const box = await handle.boundingBox();
+     await page.mouse.move(box.x + 30, box.y + 10); await page.mouse.down();
+-    await page.mouse.move(box.x + 130, box.y + 75, { steps: 10 }); await page.mouse.up();
++    await page.mouse.move(box.x + 30, box.y + 250, { steps: 10 }); await page.mouse.up();
+     const after = (await save()).graph;
+-    assert.notEqual(after.nodes[0].x, before.nodes[0].x);
++    assert.notEqual(after.nodes[0].y, before.nodes[0].y);
+     assert.deepEqual(after.edges, before.edges);
+     return { resourceDragAdded: 2, nodeMoveChangedPosition: true };
+   });
