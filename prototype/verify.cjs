@@ -13,6 +13,7 @@ const sourceFiles = [
 const report = {
   status: "failed",
   baseCommit: "23ef629beab623674a07cad4e302bc481a78abf0",
+  revisionBaseCommit: "8af933726fc9f49408f5236dd5399d826681b141",
   branch: "codex/desktop-contract-v0.1",
   recordedAt: new Date().toISOString(),
   environment: { node: process.version, platform: process.platform, arch: process.arch },
@@ -20,6 +21,8 @@ const report = {
   commands: [],
   sourceFiles: {},
   browser: { status: "not_run", screenshots: [], domAssertions: null, consoleErrors: null, horizontalOverflow: null, networkCallCounts: null },
+  visualReview: "pending_human_comparison",
+  firstUseReview: "pending_human_walkthrough",
   deployment: "not_run",
   originalSiteIntegration: "not_verified",
   platformExecution: "not_run",

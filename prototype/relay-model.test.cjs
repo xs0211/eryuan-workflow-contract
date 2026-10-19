@@ -319,6 +319,7 @@ test("integrated existing page renders thirteen typed cards and locked system co
   assert.equal((markup.match(/data-kind="ai"/g) || []).length, 10);
   assert.equal((markup.match(/data-kind="sign"/g) || []).length, 3);
   assert(markup.includes('data-port-id="rejected"'));
+  harness.delegated({ selectNode: "01.1-V02" });
   assert(harness.element("#relay-inspector").innerHTML.includes("系统口（只可改名）"));
   assert(harness.element("#app").innerHTML.includes("这条流程迁移时有改动，请检查"));
   assert.equal(harness.calls(), 0);
@@ -411,6 +412,7 @@ test("damaged or unsupported shared baseline drafts remain untouched and are not
 
 test("UI port dialog does not offer system deletion or type mutation", () => {
   const harness = uiHarness();
+  harness.delegated({ selectNode: "01.1-V02" });
   harness.delegated({ editPort: "material", portDirection: "inputs" });
   const markup = harness.element("#relay-dialog-body").innerHTML;
   assert(!markup.includes('id="relay-delete-port"'));
@@ -420,6 +422,7 @@ test("UI port dialog does not offer system deletion or type mutation", () => {
 
 test("node edits immediately invalidate check and persist without separate form submit", () => {
   const harness = uiHarness();
+  harness.delegated({ selectNode: "01.1-V02" });
   harness.click("#relay-check");
   assert.equal(harness.element("#relay-check").textContent, "查看检查结果");
   const form = { fields: { name: "修改脚本", prompt_p1: "前提", prompt_p2: "只使用商品资料", prompt_p3: "要求", exec_kind: "platform", exec_model: "test-model", skills: "", connectors: "", timeout_sec: "600", queue_timeout_sec: "" } };
@@ -448,6 +451,7 @@ test("storage denial fails softly without claiming save", () => {
 
 test("offline scoped edits are escaped and undoable", () => {
   const harness = uiHarness();
+  harness.delegated({ selectNode: "01.1-V02" });
   harness.element("#relay-chat-input").value = '<script>alert("x")</script>';
   harness.element("#relay-chat-scope").value = "node";
   harness.click("#relay-chat-apply");
@@ -463,4 +467,148 @@ test("page integration loads local contract assets and retains connect-src none"
   assert(html.includes('src="./relay-ui.js"'));
   assert(html.includes("connect-src 'none'"));
   assert(read("app.js").includes('typeof initContractWorkbench === "function"'));
+});
+
+test("canvas opens without selected card or permanent configuration panels", () => {
+  const harness = uiHarness();
+  for (const panel of ["palette", "inspector-panel", "templates-panel", "chat-panel"]) assert.equal(harness.element(`#relay-${panel}`).hidden, true);
+  const markup = harness.element("#app").innerHTML;
+  assert.equal((markup.match(/aria-controls="relay-palette"/g) || []).length, 4);
+  assert.equal((markup.match(/class="relay-primary"/g) || []).length, 1);
+  assert(!markup.includes('class="relay-header"'));
+  assert(!markup.includes('class="relay-progress"'));
+  assert(!harness.element("#relay-cards").innerHTML.includes("selected"));
+  assert.equal(harness.element("#relay-start").textContent, "确认流程目标 →");
+});
+
+test("floating categories are exclusive and opening them does not mutate the draft", () => {
+  const harness = uiHarness();
+  harness.click("#relay-save");
+  const before = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph;
+  for (const category of ["input", "ai", "human", "output"]) {
+    harness.delegated({ openPanel: category });
+    assert.equal(harness.element("#relay-palette").hidden, false);
+    for (const other of ["input", "ai", "human", "output"]) assert.equal(harness.element(`#relay-category-${other}`).hidden, other !== category);
+    assert(harness.element("#relay-save-state").textContent.includes("已保存"));
+  }
+  harness.delegated({ openPanel: "output" });
+  assert.equal(harness.element("#relay-palette").hidden, true);
+  harness.click("#relay-save");
+  assert.deepEqual(JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph, before);
+});
+
+test("selecting opens a business-first panel and closing restores unobstructed canvas", () => {
+  const harness = uiHarness();
+  harness.delegated({ selectNode: "01.1-V02" });
+  assert.equal(harness.element("#relay-inspector-panel").hidden, false);
+  const markup = harness.element("#relay-inspector").innerHTML;
+  assert(markup.indexOf("这一步要完成什么") < markup.indexOf('name="prompt_p2"'));
+  assert(markup.indexOf("处理者与工具的高级设置") < markup.indexOf('name="exec_model"'));
+  assert(!markup.includes("<details open"));
+  harness.delegated({ closePanel: "" });
+  assert.equal(harness.element("#relay-inspector-panel").hidden, true);
+  assert(!harness.element("#relay-cards").innerHTML.includes("selected"));
+});
+
+test("goal to breakdown to missing-item action works without replacing manual nodes", () => {
+  const harness = uiHarness();
+  harness.delegated({ addKind: "text" });
+  harness.click("#relay-save");
+  const before = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph;
+  harness.click("#relay-start");
+  harness.element("#relay-goal-form").onsubmit({ preventDefault() {}, target: { fields: { flow_name: "我的流程", flow_goal: "保留所有人工步骤" } } });
+  assert.equal(harness.element("#relay-dialog-title").textContent, "确认这条流程怎么完成工作");
+  assert(harness.element("#relay-dialog-body").innerHTML.includes("新增步骤"));
+  assert.equal((harness.element("#relay-dialog-body").innerHTML.match(/data-resolve-node=/g) || []).length, 14);
+  assert.equal(harness.element("#relay-start").textContent, "确认流程拆解 →");
+  harness.click("#relay-guide-check");
+  assert.equal(harness.element("#relay-dialog-title").textContent, "先补齐这些内容");
+  assert(harness.element("#relay-dialog-body").innerHTML.includes('data-resolve-node="01.1-H02"'));
+  harness.delegated({ resolveNode: "01.1-H02" });
+  assert.equal(harness.element("#relay-dialog").open, false);
+  assert.equal(harness.element("#relay-inspector-panel").hidden, false);
+  assert(harness.element("#relay-inspector").innerHTML.includes('name="gate_signer_uid"'));
+  harness.click("#relay-save");
+  const after = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1"));
+  assert.deepEqual(after.graph.nodes, before.nodes);
+  assert.deepEqual(after.graph.edges, before.edges);
+  assert.equal(after.graph.ui.guideStage, "check");
+  assert.equal(after.runnable, false);
+  assert.equal(after.executionEvidence, "not_run");
+  assert.equal(harness.calls(), 0);
+});
+
+test("empty goal cannot advance the first-operation guide", () => {
+  const harness = uiHarness();
+  harness.click("#relay-start");
+  harness.element("#relay-goal-form").onsubmit({ preventDefault() {}, target: { fields: { flow_name: "名称", flow_goal: "  " } } });
+  assert(harness.element("#relay-notice").textContent.includes("先写一句"));
+  assert.equal(harness.element("#relay-start").textContent, "确认流程目标 →");
+});
+
+test("offline flow edit returns to goal confirmation without rewriting connections", () => {
+  const harness = uiHarness();
+  harness.click("#relay-check");
+  harness.click("#relay-save");
+  const before = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph;
+  harness.delegated({ openPanel: "chat" });
+  assert.equal(harness.element("#relay-chat-panel").hidden, false);
+  harness.element("#relay-chat-input").value = "人工确认后交付，不自动发布";
+  harness.element("#relay-chat-scope").value = "flow";
+  harness.click("#relay-chat-apply");
+  assert.equal(harness.element("#relay-check").textContent, "检查连接");
+  assert.equal(harness.element("#relay-start").textContent, "确认流程目标 →");
+  harness.click("#relay-save");
+  const after = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph;
+  assert.deepEqual(after.edges, before.edges);
+  assert.deepEqual(after.nodes, before.nodes);
+  assert.equal(harness.calls(), 0);
+});
+
+test("stage layout keeps thirteen identities and does not rearrange a saved graph", () => {
+  const harness = uiHarness();
+  harness.click("#relay-save");
+  const key = "eryuan-relay-desktop-draft-v1";
+  const saved = JSON.parse(harness.storage.get(key));
+  assert.equal(saved.graph.nodes.length, 13);
+  assert.equal(new Set(saved.graph.nodes.map((node) => node.x)).size, 4);
+  assert.equal(saved.graph.edges.length, 12);
+  saved.graph.nodes[0].x = 456;
+  saved.graph.nodes[0].y = 789;
+  harness.storage.set(key, JSON.stringify(saved));
+  const restored = uiHarness(harness.storage);
+  restored.click("#relay-save");
+  assert.deepEqual(JSON.parse(harness.storage.get(key)).graph, saved.graph);
+});
+
+test("fit-to-view changes only viewport zoom, not node positions or saved status", () => {
+  const harness = uiHarness();
+  harness.click("#relay-save");
+  const before = JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph;
+  harness.element("#relay-scroll").clientWidth = 1440;
+  harness.element("#relay-scroll").clientHeight = 1000;
+  harness.click("#relay-fit");
+  assert(harness.element("#relay-plane").style.zoom > 0.25);
+  assert(harness.element("#relay-plane").style.zoom <= 1);
+  assert(harness.element("#relay-save-state").textContent.includes("已保存"));
+  harness.click("#relay-save");
+  assert.deepEqual(JSON.parse(harness.storage.get("eryuan-relay-desktop-draft-v1")).graph, before);
+});
+
+test("manual layout cleanup is explicit, data-preserving and undoable", () => {
+  const harness = uiHarness();
+  harness.delegated({ addKind: "text" });
+  harness.click("#relay-save");
+  const key = "eryuan-relay-desktop-draft-v1";
+  const before = JSON.parse(harness.storage.get(key)).graph;
+  harness.click("#relay-layout");
+  harness.click("#relay-save");
+  const after = JSON.parse(harness.storage.get(key)).graph;
+  const withoutPosition = (nodes) => nodes.map(({ x, y, ...rest }) => rest);
+  assert.deepEqual(withoutPosition(after.nodes), withoutPosition(before.nodes));
+  assert.deepEqual(after.edges, before.edges);
+  assert.equal(after.nodes.at(-1).x, 1230);
+  harness.click("#relay-undo");
+  harness.click("#relay-save");
+  assert.deepEqual(JSON.parse(harness.storage.get(key)).graph, before);
 });

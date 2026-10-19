@@ -1,8 +1,9 @@
 {
   "status": "passed",
   "baseCommit": "23ef629beab623674a07cad4e302bc481a78abf0",
+  "revisionBaseCommit": "8af933726fc9f49408f5236dd5399d826681b141",
   "branch": "codex/desktop-contract-v0.1",
-  "recordedAt": "2026-10-19T08:55:36.029Z",
+  "recordedAt": "2026-10-19T09:57:15.393Z",
   "environment": {
     "node": "v22.22.3",
     "platform": "darwin",
@@ -13,47 +14,47 @@
     {
       "command": "node --check app.js",
       "exitCode": 0,
-      "output": "(node:97420) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16281) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check workbench.js",
       "exitCode": 0,
-      "output": "(node:97421) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16282) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-model.js",
       "exitCode": 0,
-      "output": "(node:97422) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16283) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-ui.js",
       "exitCode": 0,
-      "output": "(node:97423) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16284) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check workbench.test.cjs",
       "exitCode": 0,
-      "output": "(node:97424) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16285) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-model.test.cjs",
       "exitCode": 0,
-      "output": "(node:97427) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16286) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check desktop-qa.cjs",
       "exitCode": 0,
-      "output": "(node:97428) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16287) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check desktop-qa.test.cjs",
       "exitCode": 0,
-      "output": "(node:97429) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16288) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check verify.cjs",
       "exitCode": 0,
-      "output": "(node:97430) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+      "output": "(node:16289) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs desktop-qa.test.cjs",
@@ -83,36 +84,36 @@
       "sha256": "c8aed6e6c4a792d65b124385258e100cba8f5401e1ac6391eb1bb9a433945b39"
     },
     "prototype/relay-model.js": {
-      "bytes": 26514,
-      "sha256": "61012ea15cb63a69c9a8c5fd5ac2b4aabaf49a7e2d596c5b755c4d44e1a19170"
+      "bytes": 26822,
+      "sha256": "86a032019391f054706fd43717331b087bc39eb0aa6c95931f47defd3c237852"
     },
     "prototype/relay-ui.js": {
-      "bytes": 36691,
-      "sha256": "2dbd62e37dd617d9394c96d260f1b3bde5b6f8b62491cb422bbc2c09b0c1f5ef"
+      "bytes": 46086,
+      "sha256": "0df48584e8b9db4f90d1ab6a257e0e46998f40c78d467e03eb92ad13474b05ee"
     },
     "prototype/relay-ui.css": {
-      "bytes": 10637,
-      "sha256": "9991aca4b05bf95df4421780999c220d19294d6479976d692577af893b9d7da7"
+      "bytes": 11993,
+      "sha256": "f471433dd0b82c4fad364bbb028d6360892fcd0229b94bbcf22e984961844c70"
     },
     "prototype/workbench.test.cjs": {
       "bytes": 16491,
       "sha256": "012afa665eb87123bfb3319647f47f46d1984998ea2df993f0a698e3dee37757"
     },
     "prototype/relay-model.test.cjs": {
-      "bytes": 24567,
-      "sha256": "608618ffd9bd00399167b0822eb73ca584acf4a4b8203b2f2f926d6489b22592"
+      "bytes": 32610,
+      "sha256": "abc767c36909de69bd2e11eb7058a5c9d7089778bc0fa83df8b20f5b9bbec334"
     },
     "prototype/desktop-qa.cjs": {
-      "bytes": 19324,
-      "sha256": "90e74185904b13f8d9133236f5d71687acf03a4da3b197c89ca71c94d451acb4"
+      "bytes": 24829,
+      "sha256": "7819b0ed4a141f547c45183151bde630e643fb637ec9dccdfb80fffbc2614a89"
     },
     "prototype/desktop-qa.test.cjs": {
       "bytes": 4525,
       "sha256": "3f2fbc8192ea2a82c9e15a934dbbe5423a9e7cdb6fa7b0f87550e7e34f985dff"
     },
     "prototype/verify.cjs": {
-      "bytes": 3630,
-      "sha256": "12e8cc8df0c9e073d03ee0e0c302bfd28923247577214454ea3ea4739d7f3978"
+      "bytes": 3787,
+      "sha256": "1a988cb7c0142f60d2640c6865323d596e22a930b9a30cfa9805fa016baabd99"
     }
   },
   "browser": {
@@ -123,17 +124,19 @@
     "horizontalOverflow": null,
     "networkCallCounts": null
   },
+  "visualReview": "pending_human_comparison",
+  "firstUseReview": "pending_human_walkthrough",
   "deployment": "not_run",
   "originalSiteIntegration": "not_verified",
   "platformExecution": "not_run",
   "A2": "blocked",
   "tests": {
-    "tests": 79,
-    "pass": 79,
+    "tests": 88,
+    "pass": 88,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0
   },
-  "tapSha256": "79df9d3c1049bd0a667bc066a885bd982064da9827524272caa0b147142dfe83"
+  "tapSha256": "dc00d073bb39f3cbb1e1f8957071d18079a92e937999ccee281b78a724fa0e4e"
 }

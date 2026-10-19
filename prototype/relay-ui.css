@@ -1,5 +1,4 @@
 body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
-.relay-app { --relay-ink: #20242e; --relay-sub: #7b8494; --relay-line: #e8eaef; --relay-accent: #4e6ef2; height: 100dvh; display: flex; flex-direction: column; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; color: var(--relay-ink); background: #f3f4f6; }
 .relay-app * { box-sizing: border-box; }
 .relay-app button, .relay-app input, .relay-app textarea, .relay-app select { font: inherit; }
 .relay-app button { cursor: pointer; background: white; color: var(--relay-ink); border: 1px solid var(--relay-line); border-radius: 7px; padding: 7px 11px; }
@@ -13,35 +12,10 @@ body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
 .relay-app h2 { font-size: 15px; }
 .relay-app h3 { font-size: 12px; font-weight: 600; }
 .relay-app small { color: var(--relay-sub); font-size: 11px; }
-.relay-header { display: flex; align-items: center; gap: 12px; padding: 14px 24px; background: white; border-bottom: 1px solid var(--relay-line); flex-shrink: 0; }
-.relay-brand { display: flex; align-items: center; gap: 10px; }
-.relay-brand > span { border-radius: 9px; padding: 6px 10px; background: #4e6ef2; color: white; font-weight: 700; font-size: 19px; }
-.relay-brand strong { display: block; font-size: 16px; }
-.relay-status { margin-left: auto; color: var(--relay-sub); font-size: 12px; }
-.relay-migration { display: flex; gap: 14px; align-items: center; padding: 7px 24px; color: #89610c; background: #fff8e5; border-bottom: 1px solid #f2e5bd; font-size: 12px; }
-.relay-migration[hidden] { display: none; }
-.relay-migration button { margin-left: auto; padding: 2px 7px; background: transparent; color: #89610c; border-color: #ead8a6; }
-.relay-progress { display: flex; align-items: center; gap: 26px; padding: 11px 24px; background: white; border-bottom: 1px solid var(--relay-line); color: var(--relay-sub); flex-shrink: 0; }
-.relay-progress .active { color: #4e6ef2; font-weight: 600; }
-.relay-progress small { margin-left: auto; }
-.relay-workspace { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
-.relay-palette { width: 170px; flex-shrink: 0; padding: 20px 12px; background: white; border-right: 1px solid var(--relay-line); overflow: auto; }
-.relay-palette h2 { padding-left: 8px; margin-bottom: 18px; }
-.relay-palette section { margin-bottom: 22px; }
-.relay-palette h3 { color: var(--relay-sub); margin: 0 8px 8px; }
-.relay-palette button { display: flex; align-items: center; gap: 8px; text-align: left; width: 100%; border: none; padding: 9px 8px; font-size: 12px; }
-.relay-palette button span { margin-left: auto; color: #9ba3b1; }
-.relay-palette > section > small { padding: 8px; display: block; }
 .relay-kind-dot { width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; display: inline-block; background: #e4f3fc; border: 4px solid #b5dff7; }
 .relay-kind-dot.ai { background: #e5e9ff; border-color: #adbafa; }
 .relay-kind-dot.sign { background: #fff2ce; border-color: #efd58e; }
 .relay-kind-dot.group_send, .relay-kind-dot.drive_save, .relay-kind-dot.result { background: #dcf4e7; border-color: #99d2b4; }
-.relay-board { flex: 1; min-width: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
-.relay-board-heading { position: absolute; top: 22px; left: 26px; right: 26px; z-index: 3; pointer-events: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
-.relay-board-heading p { color: var(--relay-sub); font-size: 11px; margin-top: 4px; }
-.relay-board-heading button { pointer-events: auto; flex-shrink: 0; box-shadow: 0 3px 12px #20242e09; }
-.relay-scroll { flex: 1; overflow: auto; min-height: 0; background-image: radial-gradient(#dbdee4 1px, transparent 1px); background-size: 22px 22px; padding-bottom: 90px; }
-.relay-plane { position: relative; transform-origin: 0 0; }
 #relay-edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
 #relay-edges path { fill: none; stroke: #adb7cc; stroke-width: 1.6; }
 #relay-edges path.rejected { stroke: #dca1a3; stroke-dasharray: 5 4; }
@@ -50,10 +24,7 @@ body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
 .relay-card-head { display: flex; align-items: center; gap: 7px; padding: 0 11px; cursor: grab; touch-action: none; }
 .relay-card-head button { font-weight: 600; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; flex: 1; }
 .relay-card-head > span { font-size: 10px; color: var(--relay-sub); flex-shrink: 0; }
-.relay-card > p { margin: 9px 12px 12px; color: var(--relay-sub); font-size: 11px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 35px; }
 .relay-card-ports { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 9px; }
-.relay-port { display: flex; align-items: center; gap: 5px; height: 29px; width: 100%; border: none !important; border-radius: 0 !important; padding: 4px 8px 4px 0 !important; font-size: 11px !important; }
-.relay-port.outputs { flex-direction: row-reverse; text-align: right; padding: 4px 0 4px 8px !important; }
 .relay-port span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .relay-port small { font-size: 9px; }
 .relay-port-dot { display: block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #7996ed; margin-left: -5px; border: 2px solid white; box-shadow: 0 0 0 1px #7996ed; }
@@ -61,14 +32,6 @@ body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
 .relay-port-dot.file { background: #43b4a4; box-shadow: 0 0 0 1px #43b4a4; }
 .relay-port-dot.image { background: #dfad4e; box-shadow: 0 0 0 1px #dfad4e; }
 .relay-port-dot.msg { background: #b48aca; box-shadow: 0 0 0 1px #b48aca; }
-.relay-card footer { border-top: 1px solid #f1f2f5; padding: 6px 12px; font-size: 10px; color: #9098a7; }
-.relay-card footer.needs-input { color: #a87c2b; background: #fffbf2; border-radius: 0 0 12px 12px; }
-.relay-dock { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px; border: 1px solid #e1e4eb; border-radius: 11px; box-shadow: 0 4px 24px #20242e10; background: white; z-index: 4; }
-.relay-dock button { font-size: 12px; border: none; }
-.relay-dock span { color: var(--relay-sub); font-size: 11px; }
-.relay-divider { height: 20px; border-left: 1px solid var(--relay-line); margin: 0 3px; }
-.relay-connect-hint { position: absolute; bottom: 8px; left: 12px; right: 12px; text-align: center; font-size: 10px; color: #828a99; pointer-events: none; }
-.relay-inspector { width: 322px; flex-shrink: 0; background: white; border-left: 1px solid var(--relay-line); padding: 20px; overflow-y: auto; }
 .relay-inspector-head h2 { margin: 4px 0 9px; }
 .relay-inspector-head p { color: #8b753d; font-size: 12px; line-height: 1.7; margin-bottom: 18px; }
 .relay-field { display: block; margin: 12px 0; }
@@ -87,11 +50,6 @@ body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
 .relay-advanced pre { max-width: 100%; overflow: auto; background: #f7f8fb; padding: 10px; font-size: 10px; }
 .relay-inspector-actions { display: flex; gap: 8px; margin: 20px 0; }
 .relay-inspector-actions button { font-size: 11px; }
-.relay-chat { padding-top: 18px; border-top: 1px solid var(--relay-line); margin-top: 20px; }
-.relay-chat p { font-size: 11px; color: var(--relay-sub); margin: 8px 0; }
-.relay-chat textarea, .relay-chat select { width: 100%; margin: 5px 0; }
-#relay-notice { position: fixed; bottom: 12px; right: 342px; max-width: 540px; font-size: 12px; background: #273349; color: white; border-radius: 8px; padding: 9px 14px; box-shadow: 0 4px 18px #20242e15; z-index: 12; }
-#relay-notice:empty { display: none; }
 #relay-dialog { border: 1px solid #e0e5ef; border-radius: 15px; width: min(600px, 90vw); max-height: 85vh; padding: 22px; color: var(--relay-ink); background: white; box-shadow: 0 18px 70px #18233b25; }
 #relay-dialog::backdrop { background: #17233255; }
 .relay-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
@@ -103,3 +61,56 @@ body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
 .relay-issue { background: #fff9ec; border-left: 3px solid #e2c278; margin: 10px 0; padding: 10px 12px; font-size: 12px; }
 .relay-issue.err { background: #fff5f4; border-color: #dfa2a0; }
 .relay-issue p { margin-top: 4px; }
+.relay-app { --relay-ink: #20242e; --relay-sub: #7b8494; --relay-line: #e8eaef; --relay-accent: #4e6ef2; position: fixed; inset: 0; color: var(--relay-ink); background: #f3f4f6; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; }
+.relay-app [hidden] { display: none !important; }
+.relay-app svg { width: 18px; height: 18px; flex-shrink: 0; }
+.relay-workspace, .relay-board { position: absolute; inset: 0; overflow: hidden; }
+.relay-scroll { position: absolute; inset: 0; display: flex; overflow: auto; padding: 155px 105px 115px; background: radial-gradient(#d8dce4 1px, transparent 1px) 0 0 / 22px 22px; }
+.relay-plane { position: relative; flex-shrink: 0; margin: auto; transform-origin: 0 0; }
+.relay-board-heading { position: absolute; top: 24px; left: 108px; z-index: 3; max-width: min(570px, 48vw); pointer-events: none; }
+.relay-board-heading > small { display: block; margin-bottom: 3px; }
+.relay-board-heading h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.relay-next { margin-top: 12px; }
+.relay-next p { margin-bottom: 8px; color: #707989; font-size: 12px; }
+.relay-next button { pointer-events: auto; }
+.relay-next .relay-text-button { border: 0; background: transparent; color: #737d8e; font-size: 12px; }
+.relay-status-area { position: absolute; right: 24px; top: 24px; z-index: 3; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.relay-status { background: #fff; border-radius: 99px; padding: 8px 14px; box-shadow: 0 3px 14px #20242e08; color: #717b8b; font-size: 11px; }
+.relay-migration { display: flex; align-items: center; gap: 6px; background: #fff8e5; border: 1px solid #f0e4bd; border-radius: 8px; color: #89610c; padding: 4px 8px; font-size: 11px; }
+.relay-migration button { padding: 2px 5px; background: transparent; color: inherit; border: none; font-size: 11px; text-decoration: underline; }
+.relay-rail { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); z-index: 5; display: flex; flex-direction: column; gap: 10px; }
+.relay-rail button { width: 62px; min-height: 62px; border: 1px solid #e5e7ec; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px; padding: 8px 3px; background: #fff; box-shadow: 0 4px 14px #20242e06; color: #737c8b; }
+.relay-rail button span { font-size: 10.5px; }
+.relay-rail svg { width: 20px; height: 20px; }
+.relay-app button[aria-expanded="true"] { background: #edf0ff; color: #4e6ef2; }
+.relay-floating-panel { position: absolute; z-index: 7; border: 1px solid #e5e7ec; border-radius: 14px; background: #fff; box-shadow: 0 16px 42px #20242e14, 0 2px 4px #20242e05; padding: 16px; overflow: auto; }
+.relay-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.relay-panel-head > span { font-size: 11px; color: var(--relay-sub); }
+.relay-panel-head button { border: 0; color: #87909e; font-size: 19px; padding: 1px 8px; }
+.relay-palette { left: 92px; top: 50%; transform: translateY(-50%); width: 244px; max-height: calc(100vh - 200px); }
+.relay-palette p { color: var(--relay-sub); font-size: 11px; margin-bottom: 12px; }
+.relay-palette section > button { display: flex; align-items: center; gap: 9px; text-align: left; width: 100%; border: none; padding: 11px 8px; font-size: 12px; }
+.relay-palette section > button span { margin-left: auto; color: #9ba3b1; }
+.relay-stage-label { position: absolute; font-size: 12px; color: #8992a1; letter-spacing: 1px; }
+.relay-card > p { margin: 9px 12px; color: var(--relay-sub); font-size: 11px; line-height: 1.6; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.relay-card footer { border-top: 1px solid #f1f2f5; padding: 5px 12px; font-size: 10px; color: #9098a7; }
+.relay-card footer.needs-input { color: #a87c2b; background: #fffbf2; border-radius: 0 0 12px 12px; }
+.relay-port { display: flex; align-items: center; gap: 5px; height: 26px; width: 100%; border: none !important; border-radius: 0 !important; padding: 3px 8px 3px 0 !important; font-size: 10.5px !important; }
+.relay-port.outputs { flex-direction: row-reverse; text-align: right; padding: 3px 0 3px 8px !important; }
+.relay-dock { position: absolute; bottom: 23px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 2px; white-space: nowrap; padding: 7px; border: 1px solid #e5e7ec; border-radius: 14px; box-shadow: 0 12px 34px #1018281f, 0 1px 2px #1018280f; background: white; z-index: 8; }
+.relay-dock button { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 32px; height: 34px; padding: 7px 9px; border: none; font-size: 12px; color: #5b6472; }
+.relay-dock > span { color: var(--relay-sub); font-size: 11px; }
+.relay-divider { height: 20px; border-left: 1px solid var(--relay-line); margin: 0 6px; }
+.relay-connect-hint { position: absolute; bottom: 83px; left: 105px; right: 105px; text-align: center; font-size: 11px; color: #8992a1; pointer-events: none; }
+.relay-inspector { top: 110px; bottom: 100px; right: 22px; width: 364px; }
+.relay-business-summary { background: #f7f8fb; border-radius: 10px; padding: 12px; margin-bottom: 15px; }
+.relay-business-summary p { font-size: 12px; margin: 6px 0; line-height: 1.7; color: #657084; }
+.relay-chat, .relay-templates-panel { bottom: 88px; left: 50%; transform: translateX(-50%); width: 390px; max-height: calc(100vh - 220px); }
+.relay-chat p { font-size: 11px; color: var(--relay-sub); margin: 8px 0; }
+.relay-chat textarea, .relay-chat select { width: 100%; margin: 5px 0; }
+#relay-templates button { display: block; width: 100%; margin: 6px 0; text-align: left; }
+#relay-notice { position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%); max-width: 540px; font-size: 12px; background: #273349; color: white; border-radius: 8px; padding: 9px 14px; box-shadow: 0 4px 18px #20242e15; z-index: 12; pointer-events: none; }
+#relay-notice:empty { display: none; }
+.relay-breakdown { margin: 16px 0; }
+.relay-breakdown h3 { color: var(--relay-sub); margin-bottom: 7px; }
+.relay-breakdown button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 0; text-align: left; }

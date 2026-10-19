@@ -35,8 +35,13 @@ const RelayContract = (() => {
   }
 
   function fromBusinessAtoms(businessAtoms) {
+    const stages = ["intent", "assets", "generation", "delivery"];
+    const stageRows = new Map();
     const nodes = businessAtoms.map((business, index) => {
-      const node = createNode(business.human ? "sign" : "ai", business.id, { x: 50 + (index % 4) * 290, y: 100 + Math.floor(index / 4) * 310 });
+      const column = stages.indexOf(business.stage);
+      const row = stageRows.get(business.stage) || 0;
+      stageRows.set(business.stage, row + 1);
+      const node = createNode(business.human ? "sign" : "ai", business.id, { x: column >= 0 ? 30 + column * 300 : 30 + (index % 4) * 300, y: 55 + (column >= 0 ? row : Math.floor(index / 4)) * 205 });
       node.name = business.name;
       node.params.businessContract = clone(business);
       if (node.kind === "ai") node.prompts = { p1: business.description, p2: business.business?.prompt ?? business.modules.execute.action, p3: business.business?.output ?? business.modules.review.action };

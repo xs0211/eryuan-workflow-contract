@@ -47,6 +47,7 @@ function initialAudit() {
     environment: { node: process.version, platform: process.platform, arch: process.arch },
     consoleErrors: null, pageErrors: null, network: null,
     scope: "Isolated desktop UI and guarded static-preview requests; not platform execution",
+    visualReview: "pending_human_comparison", firstUseReview: "pending_human_walkthrough",
     platformExecution: "not_run", deployment: "not_run", originalSiteIntegration: "not_verified", A2: "blocked",
   };
 }
@@ -55,7 +56,17 @@ async function runDesktopCases(page, audit, output, persist) {
   const readSaved = () => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), storageKey);
   const save = async () => { await page.locator("#relay-save").click(); return readSaved(); };
   const close = () => page.locator("#relay-dialog-close").click();
-  const selectNode = (id) => page.locator(`[data-select-node="${id}"]`).click();
+  const closePanels = async () => {
+    const closeButton = page.locator("[data-close-panel]:visible");
+    if (await closeButton.count()) await closeButton.first().click();
+  };
+  const selectNode = async (id) => { await closePanels(); await page.locator(`[data-select-node="${id}"]`).click(); };
+  const addKind = async (kind) => {
+    await closePanels();
+    const category = ["text", "image", "file", "group_messages"].includes(kind) ? "input" : kind === "ai" ? "ai" : kind === "sign" ? "human" : "output";
+    await page.locator(`[data-open-panel="${category}"]`).click();
+    await page.locator(`[data-add-kind="${kind}"]`).click();
+  };
   const runCase = async (id, action) => {
     const entry = { id, status: "failed", startedAt: new Date().toISOString() };
     audit.cases.push(entry);
@@ -79,7 +90,16 @@ async function runDesktopCases(page, audit, output, persist) {
     assert.equal(await page.locator('.relay-card[data-kind="sign"]').count(), 3);
     assert.deepEqual(await page.locator("[data-add-kind]").evaluateAll((buttons) => buttons.map((button) => button.dataset.addKind)), kinds);
     assert(await page.locator("#relay-migration").isVisible());
-    assert(await page.getByRole("button", { name: "真实运行未开放", exact: true }).isDisabled());
+    assert(await page.getByRole("button", { name: "运行未开放", exact: true }).isDisabled());
+    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 0);
+    assert.equal(await page.locator(".relay-rail button").count(), 4);
+    assert.equal(await page.locator(".relay-primary:visible").count(), 1);
+    assert.equal(await page.locator(".relay-card.selected").count(), 0);
+    const board = await page.locator(".relay-board").boundingBox();
+    assert.deepEqual(board, { x: 0, y: 0, width: 1440, height: 1000 });
+    await page.locator("#relay-fit").click();
+    const cardBounds = await page.locator(".relay-card").evaluateAll((cards) => cards.map((card) => { const bounds = card.getBoundingClientRect(); return { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom }; }));
+    assert(cardBounds.every((bounds) => bounds.left >= 90 && bounds.right <= 1350 && bounds.top >= 150 && bounds.bottom <= 885), "Default cards must fit the central working area, clear of the rail, heading and dock");
     const saved = await save();
     assert.equal(saved.runnable, false);
     assert.equal(saved.executionEvidence, "not_run");
@@ -91,12 +111,58 @@ async function runDesktopCases(page, audit, output, persist) {
       assert(target?.inputs.some((port) => port.id === edge.toPort));
     }
     await page.waitForFunction(() => document.querySelectorAll("#relay-edges path[data-edge]").length === 12);
-    return { cards: count, ai: 10, sign: 3, portBoundEdges: saved.graph.edges.length, runnable: saved.runnable };
+    return { cards: count, ai: 10, sign: 3, portBoundEdges: saved.graph.edges.length, runnable: saved.runnable, board, cardBounds, defaultFloatingPanels: 0, primaryActions: 1 };
   });
+
+  await runCase("01a-first-operation-path", async () => {
+    const before = (await save()).graph;
+    await page.locator("#relay-start").click();
+    assert.equal(await page.locator("#relay-dialog-title").textContent(), "说清这条流程的目标");
+    await page.locator('[name="flow_goal"]').fill("为妆舟制作六镜视频；每次真人确认后再继续，不自动发布。");
+    await page.locator('#relay-goal-form button[type="submit"]').click();
+    assert.equal(await page.locator("#relay-dialog-title").textContent(), "确认这条流程怎么完成工作");
+    assert.equal(await page.locator(".relay-breakdown").count(), 4);
+    assert.equal(await page.locator(".relay-breakdown [data-resolve-node]").count(), 13);
+    await page.locator("#relay-guide-check").click();
+    assert.equal(await page.locator("#relay-dialog-title").textContent(), "先补齐这些内容");
+    await page.locator('[data-resolve-node="01.1-H02"]').first().click();
+    assert(await page.locator("#relay-inspector-panel").isVisible());
+    assert.equal(await page.locator(".relay-card.selected").getAttribute("data-node"), "01.1-H02");
+    assert(await page.locator('[name="gate_signer_uid"]').isVisible());
+    const after = (await save()).graph;
+    assert.deepEqual(after.nodes, before.nodes);
+    assert.deepEqual(after.edges, before.edges);
+    return { path: ["goal", "breakdown", "missing-inputs", "H02-configuration"], manualGraphPreserved: true, runtime: "not_run" };
+  });
+
+  await runCase("01b-return-to-canvas", async () => {
+    const before = (await save()).graph;
+    await closePanels();
+    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 0);
+    assert.equal(await page.locator(".relay-card.selected").count(), 0);
+    assert(await page.locator("#relay-start").isVisible());
+    assert.deepEqual((await save()).graph, before);
+    return { closedPanels: true, graphUnchanged: true };
+  });
+
+  await runCase("01c-floating-tools", async () => {
+    for (const category of ["input", "ai", "human", "output"]) {
+      await page.locator(`[data-open-panel="${category}"]`).click();
+      assert(await page.locator(`#relay-category-${category}`).isVisible());
+      assert.equal(await page.locator(".relay-floating-panel:visible").count(), 1);
+    }
+    await page.locator('[data-open-panel="chat"]').click();
+    assert(await page.locator("#relay-chat-input").isVisible());
+    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 1);
+    assert.match(await page.locator("#relay-chat-panel").textContent(), /不是 AI 自动改流程/);
+    return { accessibleCategories: 4, conversationVisible: true, externalAI: "not_run" };
+  });
+  await closePanels();
 
   await runCase("02-node-configuration", async () => {
     await selectNode("01.1-V02");
     await page.locator('[name="prompt_p2"]').fill("只使用测试商品事实，缺资料时停止。QA 样例，不调用模型。");
+    await page.locator("#relay-node-form summary").filter({ hasText: "处理者与工具的高级设置" }).click();
     await page.locator('[name="exec_model"]').fill("qa-model-reference-only");
     await page.locator('#relay-node-form button[type="submit"]').click();
     const node = (await save()).graph.nodes.find((entry) => entry.id === "01.1-V02");
@@ -135,6 +201,7 @@ async function runDesktopCases(page, audit, output, persist) {
     const before = await save();
     const source = before.graph.nodes.find((node) => node.id === "01.1-V02");
     await page.locator("#relay-save-template").click();
+    await page.locator('[data-open-panel="templates"]').click();
     await page.locator("[data-insert-template]").last().click();
     const after = await save();
     const copy = after.graph.nodes.find((node) => !before.graph.nodes.some((entry) => entry.id === node.id));
@@ -143,6 +210,7 @@ async function runDesktopCases(page, audit, output, persist) {
     assert.deepEqual(copy.inputs.map((port) => port.id), source.inputs.map((port) => port.id));
     assert.deepEqual(copy.outputs.map((port) => port.id), source.outputs.map((port) => port.id));
     assert.equal(after.graph.edges.length, before.graph.edges.length);
+    await page.locator('[data-open-panel="templates"]').click();
     return { newId: copy.id, originalId: source.id, inputIds: copy.inputs.map((port) => port.id), outputIds: copy.outputs.map((port) => port.id) };
   });
   await page.locator("#relay-undo").click();
@@ -160,7 +228,7 @@ async function runDesktopCases(page, audit, output, persist) {
     const added = [];
     for (const kind of kinds) {
       const before = await page.locator(".relay-card").count();
-      await page.locator(`[data-add-kind="${kind}"]`).click();
+      await addKind(kind);
       assert.equal(await page.locator(".relay-card").count(), before + 1);
       assert.equal(await page.locator(".relay-card.selected").getAttribute("data-kind"), kind);
       added.push(kind);
@@ -212,15 +280,17 @@ async function runDesktopCases(page, audit, output, persist) {
     const before = await save();
     const custom = before.graph.nodes.find((node) => node.id === "01.1-V02").inputs.find((port) => port.name === "测试附加资料");
     assert(custom);
-    await page.locator('[data-add-kind="image"]').click();
+    await addKind("image");
     const imageId = await page.locator(".relay-card.selected").getAttribute("data-node");
+    await closePanels();
     await page.locator(`[data-port-node="${imageId}"][data-port-id="out"][data-direction="outputs"]`).click();
     await page.locator(`[data-port-node="01.1-V02"][data-port-id="${custom.id}"][data-direction="inputs"]`).click();
     assert.match(await page.locator("#relay-notice").textContent(), /类型不匹配/);
     assert.equal((await save()).graph.edges.length, before.graph.edges.length);
     await page.locator("#relay-undo").click();
-    await page.locator('[data-add-kind="text"]').click();
+    await addKind("text");
     const textId = await page.locator(".relay-card.selected").getAttribute("data-node");
+    await closePanels();
     await page.locator(`[data-port-node="${textId}"][data-port-id="out"][data-direction="outputs"]`).click();
     await page.locator(`[data-port-node="01.1-V02"][data-port-id="${custom.id}"][data-direction="inputs"]`).click();
     const connected = await save();
@@ -297,6 +367,17 @@ async function main() {
     const output = path.join(destination, crypto.randomUUID());
     fs.mkdirSync(output);
     audit.artifactDirectory = path.basename(output);
+    persist();
+    const referenceFile = "v4-authorized-materials/relay-canvas-simple-ui@20261019.html";
+    const referenceBytes = fs.readFileSync(path.join(repository, referenceFile));
+    const referenceHash = digest(referenceBytes);
+    assert.equal(referenceHash, "2ead8b825c27ab0dcb13630effe01359a09d1477e3687f2c7424093bd7b23813", "Visual reference must match the owner's approved HTML");
+    const referencePage = await context.newPage();
+    await referencePage.setContent(referenceBytes.toString("utf8"), { waitUntil: "load" });
+    const referenceScreenshot = "00-owner-reference-1440.png";
+    await referencePage.screenshot({ path: path.join(output, referenceScreenshot), fullPage: false });
+    audit.visualReference = { file: referenceFile, sha256: referenceHash, screenshot: referenceScreenshot, screenshotSha256: digest(fs.readFileSync(path.join(output, referenceScreenshot))) };
+    await referencePage.close();
     persist();
     const page = await context.newPage();
     page.setDefaultTimeout(10000);

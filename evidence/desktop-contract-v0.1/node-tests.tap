@@ -1,492 +1,546 @@
 TAP version 13
-# (node:97432) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (node:16291) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: desktop QA target is explicit and supports directory or index.html
 ok 1 - desktop QA target is explicit and supports directory or index.html
   ---
-  duration_ms: 0.974209
+  duration_ms: 0.882459
   type: 'test'
   ...
 # Subtest: desktop QA rejects credentials, query, fragments and non-HTTP targets
 ok 2 - desktop QA rejects credentials, query, fragments and non-HTTP targets
   ---
-  duration_ms: 0.127917
+  duration_ms: 0.118625
   type: 'test'
   ...
 # Subtest: all eight exact assets have matching browser resource kinds
 ok 3 - all eight exact assets have matching browser resource kinds
   ---
-  duration_ms: 0.222417
+  duration_ms: 0.212583
   type: 'test'
   ...
 # Subtest: index.html target resolves scripts within the same directory
 ok 4 - index.html target resolves scripts within the same directory
   ---
-  duration_ms: 0.056334
+  duration_ms: 0.054667
   type: 'test'
   ...
 # Subtest: API, other directories, external origins and lookalike hosts are blocked
 ok 5 - API, other directories, external origins and lookalike hosts are blocked
   ---
-  duration_ms: 0.07
+  duration_ms: 0.069667
   type: 'test'
   ...
 # Subtest: POST, XHR and fetch are denied even when using an allowed filename
 ok 6 - POST, XHR and fetch are denied even when using an allowed filename
   ---
-  duration_ms: 0.086667
+  duration_ms: 0.084083
   type: 'test'
   ...
 # Subtest: static requests cannot carry credentials or query payloads
 ok 7 - static requests cannot carry credentials or query payloads
   ---
-  duration_ms: 0.051583
+  duration_ms: 0.052917
   type: 'test'
   ...
 # Subtest: network evidence omits credentials, query and fragment
 ok 8 - network evidence omits credentials, query and fragment
   ---
-  duration_ms: 0.040792
+  duration_ms: 0.038875
   type: 'test'
   ...
 # Subtest: only exact 200 asset bytes can be fulfilled
 ok 9 - only exact 200 asset bytes can be fulfilled
   ---
-  duration_ms: 0.314375
+  duration_ms: 0.291042
   type: 'test'
   ...
 # Subtest: redirects, missing assets and server errors cannot masquerade as this source
 ok 10 - redirects, missing assets and server errors cannot masquerade as this source
   ---
-  duration_ms: 0.272417
+  duration_ms: 0.263875
   type: 'test'
   ...
 # Subtest: fresh audit fails closed with unmeasured browser values, not synthetic zeros
 ok 11 - fresh audit fails closed with unmeasured browser values, not synthetic zeros
   ---
-  duration_ms: 1.506583
+  duration_ms: 0.753791
   type: 'test'
   ...
 # Subtest: a new audit cannot inherit previous passed cases or counters
 ok 12 - a new audit cannot inherit previous passed cases or counters
   ---
-  duration_ms: 0.054291
+  duration_ms: 0.052292
   type: 'test'
   ...
-# (node:97433) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# (node:16292) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: exactly nine registered kinds and four transport types
 ok 13 - exactly nine registered kinds and four transport types
   ---
-  duration_ms: 0.704666
+  duration_ms: 0.741
   type: 'test'
   ...
 # Subtest: all defaults use contract system ports, not legacy schemaRef ports
 ok 14 - all defaults use contract system ports, not legacy schemaRef ports
   ---
-  duration_ms: 1.021916
+  duration_ms: 1.052791
   type: 'test'
   ...
 # Subtest: valid typed fan-in and fan-out are permitted by V4
 ok 15 - valid typed fan-in and fan-out are permitted by V4
   ---
-  duration_ms: 0.403334
+  duration_ms: 0.422833
   type: 'test'
   ...
 # Subtest: mismatch uses the exact contract wording and does not connect
 ok 16 - mismatch uses the exact contract wording and does not connect
   ---
-  duration_ms: 0.10575
+  duration_ms: 0.109041
   type: 'test'
   ...
 # Subtest: system identity, type and required cannot be bypassed with locked=false
 ok 17 - system identity, type and required cannot be bypassed with locked=false
   ---
-  duration_ms: 0.158958
+  duration_ms: 0.250958
   type: 'test'
   ...
 # Subtest: system rename retains id and connected edges
 ok 18 - system rename retains id and connected edges
   ---
-  duration_ms: 0.126542
+  duration_ms: 0.178167
   type: 'test'
   ...
 # Subtest: custom rename updates local prompt references only
 ok 19 - custom rename updates local prompt references only
   ---
-  duration_ms: 0.23575
+  duration_ms: 0.293625
   type: 'test'
   ...
 # Subtest: custom type changes and deletion remove affected edges
 ok 20 - custom type changes and deletion remove affected edges
   ---
-  duration_ms: 0.140292
+  duration_ms: 0.161167
   type: 'test'
   ...
 # Subtest: renaming a port does not silently remove an existing invalid draft edge
 ok 21 - renaming a port does not silently remove an existing invalid draft edge
   ---
-  duration_ms: 1.269375
+  duration_ms: 0.867791
   type: 'test'
   ...
 # Subtest: custom ports respect kind, count, unique names and reserved names
 ok 22 - custom ports respect kind, count, unique names and reserved names
   ---
-  duration_ms: 0.5395
+  duration_ms: 1.368
   type: 'test'
   ...
 # Subtest: port deletion cannot silently satisfy a required input
 ok 23 - port deletion cannot silently satisfy a required input
   ---
-  duration_ms: 0.088583
+  duration_ms: 0.109125
   type: 'test'
   ...
 # Subtest: group_send inline text is the only system required-input exception
 ok 24 - group_send inline text is the only system required-input exception
   ---
-  duration_ms: 0.045708
+  duration_ms: 0.052875
   type: 'test'
   ...
 # Subtest: self edges, duplicates, cycles and nonexistent ports fail closed
 ok 25 - self edges, duplicates, cycles and nonexistent ports fail closed
   ---
-  duration_ms: 0.179333
+  duration_ms: 0.632292
   type: 'test'
   ...
 # Subtest: contract codes distinguish reversed direction and reserved port names
 ok 26 - contract codes distinguish reversed direction and reserved port names
   ---
-  duration_ms: 0.058
+  duration_ms: 0.06925
   type: 'test'
   ...
 # Subtest: stale edge type warns; compatibility comes from the actual source
 ok 27 - stale edge type warns; compatibility comes from the actual source
   ---
-  duration_ms: 0.142042
+  duration_ms: 0.0705
   type: 'test'
   ...
 # Subtest: runtime inputs enforce unique keys and reject reserved characters
 ok 28 - runtime inputs enforce unique keys and reject reserved characters
   ---
-  duration_ms: 0.140375
+  duration_ms: 0.110041
   type: 'test'
   ...
 # Subtest: AI config and resource placement are checked without claiming authorization
 ok 29 - AI config and resource placement are checked without claiming authorization
   ---
-  duration_ms: 0.091583
+  duration_ms: 0.078125
   type: 'test'
   ...
 # Subtest: platform file output is rejected even with a valid custom output port
 ok 30 - platform file output is rejected even with a valid custom output port
   ---
-  duration_ms: 0.049167
+  duration_ms: 0.042834
   type: 'test'
   ...
 # Subtest: sign has independent approved/rejected outputs, no any-mode fallback
 ok 31 - sign has independent approved/rejected outputs, no any-mode fallback
   ---
-  duration_ms: 0.046416
+  duration_ms: 0.04175
   type: 'test'
   ...
 # Subtest: parameter ranges, attachments and enums retain their contract boundaries
 ok 32 - parameter ranges, attachments and enums retain their contract boundaries
   ---
-  duration_ms: 0.055542
+  duration_ms: 0.055625
   type: 'test'
   ...
 # Subtest: templates preserve port identities and unknown params but strip runtime state
 ok 33 - templates preserve port identities and unknown params but strip runtime state
   ---
-  duration_ms: 0.144292
+  duration_ms: 0.130166
   type: 'test'
   ...
 # Subtest: organization templates keep organizational bot bindings
 ok 34 - organization templates keep organizational bot bindings
   ---
-  duration_ms: 0.04175
+  duration_ms: 0.039333
   type: 'test'
   ...
 # Subtest: template insertion is a deep copy and suffixes duplicate runtime keys
 ok 35 - template insertion is a deep copy and suffixes duplicate runtime keys
   ---
-  duration_ms: 0.100125
+  duration_ms: 0.0965
   type: 'test'
   ...
 # Subtest: drafts with errors can round-trip, unknown fields survive, reports do not authorize
 ok 36 - drafts with errors can round-trip, unknown fields survive, reports do not authorize
   ---
-  duration_ms: 0.650917
+  duration_ms: 0.624208
   type: 'test'
   ...
 # Subtest: corrupt snapshots fail before mutating state
 ok 37 - corrupt snapshots fail before mutating state
   ---
-  duration_ms: 0.11475
+  duration_ms: 0.108041
   type: 'test'
   ...
 # Subtest: diagram check blocks errors and never fabricates execution or approval
 ok 38 - diagram check blocks errors and never fabricates execution or approval
   ---
-  duration_ms: 0.11075
+  duration_ms: 0.098375
   type: 'test'
   ...
 # Subtest: actual thirteen business definitions map to ten AI and three sign cards
 ok 39 - actual thirteen business definitions map to ten AI and three sign cards
   ---
-  duration_ms: 2.642084
+  duration_ms: 2.751584
   type: 'test'
   ...
 # Subtest: unknown and malformed ports produce issues instead of running
 ok 40 - unknown and malformed ports produce issues instead of running
   ---
-  duration_ms: 0.058291
+  duration_ms: 0.056042
   type: 'test'
   ...
 # Subtest: integrated existing page renders thirteen typed cards and locked system controls
 ok 41 - integrated existing page renders thirteen typed cards and locked system controls
   ---
-  duration_ms: 4.8445
+  duration_ms: 5.893708
   type: 'test'
   ...
 # Subtest: UI save permits incomplete draft, reload preserves all graph data
 ok 42 - UI save permits incomplete draft, reload preserves all graph data
   ---
-  duration_ms: 5.523333
+  duration_ms: 5.380708
   type: 'test'
   ...
 # Subtest: legacy local draft retains manual text and full snapshot without overwrite
 ok 43 - legacy local draft retains manual text and full snapshot without overwrite
   ---
-  duration_ms: 5.576625
+  duration_ms: 5.485833
   type: 'test'
   ...
 # Subtest: shared baseline draft preserves manual instructions and immutable original snapshot
 ok 44 - shared baseline draft preserves manual instructions and immutable original snapshot
   ---
-  duration_ms: 5.481542
+  duration_ms: 5.871834
   type: 'test'
   ...
 # Subtest: damaged or unsupported shared baseline drafts remain untouched and are not imported
 ok 45 - damaged or unsupported shared baseline drafts remain untouched and are not imported
   ---
-  duration_ms: 7.167084
+  duration_ms: 7.593584
   type: 'test'
   ...
 # Subtest: UI port dialog does not offer system deletion or type mutation
 ok 46 - UI port dialog does not offer system deletion or type mutation
   ---
-  duration_ms: 1.556125
+  duration_ms: 2.309667
   type: 'test'
   ...
 # Subtest: node edits immediately invalidate check and persist without separate form submit
 ok 47 - node edits immediately invalidate check and persist without separate form submit
   ---
-  duration_ms: 14.96025
+  duration_ms: 15.133208
   type: 'test'
   ...
 # Subtest: UI blocked check stops before any execution and never says downstream succeeded
 ok 48 - UI blocked check stops before any execution and never says downstream succeeded
   ---
-  duration_ms: 12.133458
+  duration_ms: 14.2105
   type: 'test'
   ...
 # Subtest: storage denial fails softly without claiming save
 ok 49 - storage denial fails softly without claiming save
   ---
-  duration_ms: 1.941125
+  duration_ms: 2.047167
   type: 'test'
   ...
 # Subtest: offline scoped edits are escaped and undoable
 ok 50 - offline scoped edits are escaped and undoable
   ---
-  duration_ms: 2.710041
+  duration_ms: 2.982333
   type: 'test'
   ...
 # Subtest: page integration loads local contract assets and retains connect-src none
 ok 51 - page integration loads local contract assets and retains connect-src none
   ---
-  duration_ms: 2.827708
+  duration_ms: 0.742625
   type: 'test'
   ...
-# (node:97434) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# Subtest: canvas opens without selected card or permanent configuration panels
+ok 52 - canvas opens without selected card or permanent configuration panels
+  ---
+  duration_ms: 1.587792
+  type: 'test'
+  ...
+# Subtest: floating categories are exclusive and opening them does not mutate the draft
+ok 53 - floating categories are exclusive and opening them does not mutate the draft
+  ---
+  duration_ms: 2.43475
+  type: 'test'
+  ...
+# Subtest: selecting opens a business-first panel and closing restores unobstructed canvas
+ok 54 - selecting opens a business-first panel and closing restores unobstructed canvas
+  ---
+  duration_ms: 2.767291
+  type: 'test'
+  ...
+# Subtest: goal to breakdown to missing-item action works without replacing manual nodes
+ok 55 - goal to breakdown to missing-item action works without replacing manual nodes
+  ---
+  duration_ms: 14.9485
+  type: 'test'
+  ...
+# Subtest: empty goal cannot advance the first-operation guide
+ok 56 - empty goal cannot advance the first-operation guide
+  ---
+  duration_ms: 2.459125
+  type: 'test'
+  ...
+# Subtest: offline flow edit returns to goal confirmation without rewriting connections
+ok 57 - offline flow edit returns to goal confirmation without rewriting connections
+  ---
+  duration_ms: 13.329541
+  type: 'test'
+  ...
+# Subtest: stage layout keeps thirteen identities and does not rearrange a saved graph
+ok 58 - stage layout keeps thirteen identities and does not rearrange a saved graph
+  ---
+  duration_ms: 4.125625
+  type: 'test'
+  ...
+# Subtest: fit-to-view changes only viewport zoom, not node positions or saved status
+ok 59 - fit-to-view changes only viewport zoom, not node positions or saved status
+  ---
+  duration_ms: 3.096667
+  type: 'test'
+  ...
+# Subtest: manual layout cleanup is explicit, data-preserving and undoable
+ok 60 - manual layout cleanup is explicit, data-preserving and undoable
+  ---
+  duration_ms: 4.157167
+  type: 'test'
+  ...
+# (node:16293) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
 # (Use `node --trace-warnings ...` to show where the warning was created)
 # Subtest: 13 nodes, all 15 declared edges and required sources are consistent
-ok 52 - 13 nodes, all 15 declared edges and required sources are consistent
+ok 61 - 13 nodes, all 15 declared edges and required sources are consistent
   ---
-  duration_ms: 3.240667
+  duration_ms: 3.241292
   type: 'test'
   ...
 # Subtest: unknown transform and wrong HumanDecision schema are rejected
-ok 53 - unknown transform and wrong HumanDecision schema are rejected
+ok 62 - unknown transform and wrong HumanDecision schema are rejected
   ---
-  duration_ms: 3.042292
+  duration_ms: 1.155042
   type: 'test'
   ...
 # Subtest: many source into one destination is rejected
-ok 54 - many source into one destination is rejected
+ok 63 - many source into one destination is rejected
   ---
-  duration_ms: 0.905333
+  duration_ms: 0.891666
   type: 'test'
   ...
 # Subtest: six-shot collection into scalar port is rejected
-ok 55 - six-shot collection into scalar port is rejected
+ok 64 - six-shot collection into scalar port is rejected
   ---
-  duration_ms: 1.298792
+  duration_ms: 1.321917
   type: 'test'
   ...
 # Subtest: shotIndex and missing one_per_shot identity are rejected
-ok 56 - shotIndex and missing one_per_shot identity are rejected
+ok 65 - shotIndex and missing one_per_shot identity are rejected
   ---
-  duration_ms: 0.813125
+  duration_ms: 0.82775
   type: 'test'
   ...
 # Subtest: required ports and multiple scalar sources are checked
-ok 57 - required ports and multiple scalar sources are checked
+ok 66 - required ports and multiple scalar sources are checked
   ---
-  duration_ms: 0.880042
+  duration_ms: 0.904417
   type: 'test'
   ...
 # Subtest: Human stages remain separated and fake approvals cannot derive packages
-ok 58 - Human stages remain separated and fake approvals cannot derive packages
+ok 67 - Human stages remain separated and fake approvals cannot derive packages
   ---
-  duration_ms: 1.325083
+  duration_ms: 1.502583
   type: 'test'
   ...
 # Subtest: prompt edits invalidate reports and saved state immediately
-ok 59 - prompt edits invalidate reports and saved state immediately
+ok 68 - prompt edits invalidate reports and saved state immediately
   ---
-  duration_ms: 19.735917
+  duration_ms: 20.21375
   type: 'test'
   ...
 # Subtest: conversion rules affect plan and effective configuration fingerprints
-ok 60 - conversion rules affect plan and effective configuration fingerprints
+ok 69 - conversion rules affect plan and effective configuration fingerprints
   ---
-  duration_ms: 33.52275
+  duration_ms: 35.477584
   type: 'test'
   ...
 # Subtest: snapshot round trip restores atoms, edges, dependencies, bindings and prompt
-ok 61 - snapshot round trip restores atoms, edges, dependencies, bindings and prompt
+ok 70 - snapshot round trip restores atoms, edges, dependencies, bindings and prompt
   ---
-  duration_ms: 21.767083
+  duration_ms: 20.507542
   type: 'test'
   ...
 # Subtest: broken JSON, unsupported versions and malformed stages are rejected
-ok 62 - broken JSON, unsupported versions and malformed stages are rejected
+ok 71 - broken JSON, unsupported versions and malformed stages are rejected
   ---
-  duration_ms: 2.988541
+  duration_ms: 3.181458
   type: 'test'
   ...
 # Subtest: storage denial does not throw or report saved
-ok 63 - storage denial does not throw or report saved
+ok 72 - storage denial does not throw or report saved
   ---
-  duration_ms: 17.8425
+  duration_ms: 18.826375
   type: 'test'
   ...
 # Subtest: regeneration cancel preserves edits; confirmed replace is fully undoable
-ok 64 - regeneration cancel preserves edits; confirmed replace is fully undoable
+ok 73 - regeneration cancel preserves edits; confirmed replace is fully undoable
   ---
-  duration_ms: 1.523875
+  duration_ms: 1.653625
   type: 'test'
   ...
 # Subtest: node chat previews before applying and supports undo
-ok 65 - node chat previews before applying and supports undo
+ok 74 - node chat previews before applying and supports undo
   ---
-  duration_ms: 1.407959
+  duration_ms: 1.488333
   type: 'test'
   ...
 # Subtest: stale proposal and unsupported chat text cannot mutate draft
-ok 66 - stale proposal and unsupported chat text cannot mutate draft
+ok 75 - stale proposal and unsupported chat text cannot mutate draft
   ---
-  duration_ms: 0.856166
+  duration_ms: 0.934125
   type: 'test'
   ...
 # Subtest: model and capability changes are scoped; AI cannot replace Human
-ok 67 - model and capability changes are scoped; AI cannot replace Human
+ok 76 - model and capability changes are scoped; AI cannot replace Human
   ---
-  duration_ms: 1.346958
+  duration_ms: 1.706167
   type: 'test'
   ...
 # Subtest: simple editor saves actual node configuration and invalidates simulation
-ok 68 - simple editor saves actual node configuration and invalidates simulation
+ok 77 - simple editor saves actual node configuration and invalidates simulation
   ---
-  duration_ms: 0.9505
+  duration_ms: 1.054125
   type: 'test'
   ...
 # Subtest: typing applies changes before global save, without submitting node form
-ok 69 - typing applies changes before global save, without submitting node form
+ok 78 - typing applies changes before global save, without submitting node form
   ---
-  duration_ms: 91.425833
+  duration_ms: 19.600292
   type: 'test'
   ...
 # Subtest: advanced execute model edits update the actual module binding
-ok 70 - advanced execute model edits update the actual module binding
+ok 79 - advanced execute model edits update the actual module binding
   ---
-  duration_ms: 2.282375
+  duration_ms: 1.707166
   type: 'test'
   ...
 # Subtest: empty edited input stays in draft but blocks simulation
-ok 71 - empty edited input stays in draft but blocks simulation
+ok 80 - empty edited input stays in draft but blocks simulation
   ---
-  duration_ms: 2.711959
+  duration_ms: 2.239917
   type: 'test'
   ...
 # Subtest: next-step guidance distinguishes editing, human waiting and demo completion
-ok 72 - next-step guidance distinguishes editing, human waiting and demo completion
+ok 81 - next-step guidance distinguishes editing, human waiting and demo completion
   ---
-  duration_ms: 1.393875
+  duration_ms: 1.052417
   type: 'test'
   ...
 # Subtest: business renderer escapes user text and keeps Human model read-only
-ok 73 - business renderer escapes user text and keeps Human model read-only
+ok 82 - business renderer escapes user text and keeps Human model read-only
   ---
-  duration_ms: 1.230417
+  duration_ms: 0.922125
   type: 'test'
   ...
 # Subtest: scenario picker is available outside the desktop-only toolbar
-ok 74 - scenario picker is available outside the desktop-only toolbar
+ok 83 - scenario picker is available outside the desktop-only toolbar
   ---
-  duration_ms: 0.155666
+  duration_ms: 0.131291
   type: 'test'
   ...
 # Subtest: flow deletion updates edges but never silently bypasses Human gate
-ok 75 - flow deletion updates edges but never silently bypasses Human gate
+ok 84 - flow deletion updates edges but never silently bypasses Human gate
   ---
-  duration_ms: 1.301583
+  duration_ms: 1.0295
   type: 'test'
   ...
 # Subtest: flow demo pauses at each Human and produces no real approval or calls
-ok 76 - flow demo pauses at each Human and produces no real approval or calls
+ok 85 - flow demo pauses at each Human and produces no real approval or calls
   ---
-  duration_ms: 1.003875
+  duration_ms: 0.79575
   type: 'test'
   ...
 # Subtest: missing image stops demo before downstream nodes
-ok 77 - missing image stops demo before downstream nodes
+ok 86 - missing image stops demo before downstream nodes
   ---
-  duration_ms: 0.898917
+  duration_ms: 0.740584
   type: 'test'
   ...
 # Subtest: simulated return stops flow and editing invalidates all demo results
-ok 78 - simulated return stops flow and editing invalidates all demo results
+ok 87 - simulated return stops flow and editing invalidates all demo results
   ---
-  duration_ms: 1.003041
+  duration_ms: 0.799416
   type: 'test'
   ...
 # Subtest: HTML uses local assets, connection denial and explicit simulation labels
-ok 79 - HTML uses local assets, connection denial and explicit simulation labels
+ok 88 - HTML uses local assets, connection denial and explicit simulation labels
   ---
-  duration_ms: 0.32925
+  duration_ms: 0.239709
   type: 'test'
   ...
-1..79
-# tests 79
+1..88
+# tests 88
 # suites 0
-# pass 79
+# pass 88
 # fail 0
 # cancelled 0
 # skipped 0
 # todo 0
-# duration_ms 265.976833
-(node:97431) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
+# duration_ms 190.626084
+(node:16290) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.
 (Use `node --trace-warnings ...` to show where the warning was created)
