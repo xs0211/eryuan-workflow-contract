@@ -1,0 +1,412 @@
+TAP version 13
+# Subtest: exactly nine registered kinds and four transport types
+ok 1 - exactly nine registered kinds and four transport types
+  ---
+  duration_ms: 0.771542
+  type: 'test'
+  ...
+# Subtest: all defaults use contract system ports, not legacy schemaRef ports
+ok 2 - all defaults use contract system ports, not legacy schemaRef ports
+  ---
+  duration_ms: 0.793875
+  type: 'test'
+  ...
+# Subtest: valid typed fan-in and fan-out are permitted by V4
+ok 3 - valid typed fan-in and fan-out are permitted by V4
+  ---
+  duration_ms: 0.341292
+  type: 'test'
+  ...
+# Subtest: mismatch uses the exact contract wording and does not connect
+ok 4 - mismatch uses the exact contract wording and does not connect
+  ---
+  duration_ms: 0.113833
+  type: 'test'
+  ...
+# Subtest: system identity, type and required cannot be bypassed with locked=false
+ok 5 - system identity, type and required cannot be bypassed with locked=false
+  ---
+  duration_ms: 0.520334
+  type: 'test'
+  ...
+# Subtest: system rename retains id and connected edges
+ok 6 - system rename retains id and connected edges
+  ---
+  duration_ms: 2.597625
+  type: 'test'
+  ...
+# Subtest: custom rename updates local prompt references only
+ok 7 - custom rename updates local prompt references only
+  ---
+  duration_ms: 0.30325
+  type: 'test'
+  ...
+# Subtest: custom type changes and deletion remove affected edges
+ok 8 - custom type changes and deletion remove affected edges
+  ---
+  duration_ms: 0.176875
+  type: 'test'
+  ...
+# Subtest: renaming a port does not silently remove an existing invalid draft edge
+ok 9 - renaming a port does not silently remove an existing invalid draft edge
+  ---
+  duration_ms: 0.110583
+  type: 'test'
+  ...
+# Subtest: custom ports respect kind, count, unique names and reserved names
+ok 10 - custom ports respect kind, count, unique names and reserved names
+  ---
+  duration_ms: 0.372041
+  type: 'test'
+  ...
+# Subtest: port deletion cannot silently satisfy a required input
+ok 11 - port deletion cannot silently satisfy a required input
+  ---
+  duration_ms: 0.058667
+  type: 'test'
+  ...
+# Subtest: group_send inline text is the only system required-input exception
+ok 12 - group_send inline text is the only system required-input exception
+  ---
+  duration_ms: 0.052458
+  type: 'test'
+  ...
+# Subtest: self edges, duplicates, cycles and nonexistent ports fail closed
+ok 13 - self edges, duplicates, cycles and nonexistent ports fail closed
+  ---
+  duration_ms: 0.182334
+  type: 'test'
+  ...
+# Subtest: contract codes distinguish reversed direction and reserved port names
+ok 14 - contract codes distinguish reversed direction and reserved port names
+  ---
+  duration_ms: 0.061583
+  type: 'test'
+  ...
+# Subtest: stale edge type warns; compatibility comes from the actual source
+ok 15 - stale edge type warns; compatibility comes from the actual source
+  ---
+  duration_ms: 0.080458
+  type: 'test'
+  ...
+# Subtest: runtime inputs enforce unique keys and reject reserved characters
+ok 16 - runtime inputs enforce unique keys and reject reserved characters
+  ---
+  duration_ms: 0.107542
+  type: 'test'
+  ...
+# Subtest: AI config and resource placement are checked without claiming authorization
+ok 17 - AI config and resource placement are checked without claiming authorization
+  ---
+  duration_ms: 0.084708
+  type: 'test'
+  ...
+# Subtest: platform file output is rejected even with a valid custom output port
+ok 18 - platform file output is rejected even with a valid custom output port
+  ---
+  duration_ms: 0.040417
+  type: 'test'
+  ...
+# Subtest: sign has independent approved/rejected outputs, no any-mode fallback
+ok 19 - sign has independent approved/rejected outputs, no any-mode fallback
+  ---
+  duration_ms: 0.039583
+  type: 'test'
+  ...
+# Subtest: parameter ranges, attachments and enums retain their contract boundaries
+ok 20 - parameter ranges, attachments and enums retain their contract boundaries
+  ---
+  duration_ms: 0.126541
+  type: 'test'
+  ...
+# Subtest: templates preserve port identities and unknown params but strip runtime state
+ok 21 - templates preserve port identities and unknown params but strip runtime state
+  ---
+  duration_ms: 0.445667
+  type: 'test'
+  ...
+# Subtest: organization templates keep organizational bot bindings
+ok 22 - organization templates keep organizational bot bindings
+  ---
+  duration_ms: 0.063708
+  type: 'test'
+  ...
+# Subtest: template insertion is a deep copy and suffixes duplicate runtime keys
+ok 23 - template insertion is a deep copy and suffixes duplicate runtime keys
+  ---
+  duration_ms: 0.238583
+  type: 'test'
+  ...
+# Subtest: drafts with errors can round-trip, unknown fields survive, reports do not authorize
+ok 24 - drafts with errors can round-trip, unknown fields survive, reports do not authorize
+  ---
+  duration_ms: 0.640459
+  type: 'test'
+  ...
+# Subtest: corrupt snapshots fail before mutating state
+ok 25 - corrupt snapshots fail before mutating state
+  ---
+  duration_ms: 0.086833
+  type: 'test'
+  ...
+# Subtest: diagram check blocks errors and never fabricates execution or approval
+ok 26 - diagram check blocks errors and never fabricates execution or approval
+  ---
+  duration_ms: 0.087958
+  type: 'test'
+  ...
+# Subtest: actual thirteen business definitions map to ten AI and three sign cards
+ok 27 - actual thirteen business definitions map to ten AI and three sign cards
+  ---
+  duration_ms: 2.513375
+  type: 'test'
+  ...
+# Subtest: unknown and malformed ports produce issues instead of running
+ok 28 - unknown and malformed ports produce issues instead of running
+  ---
+  duration_ms: 0.045875
+  type: 'test'
+  ...
+# Subtest: integrated existing page renders thirteen typed cards and locked system controls
+ok 29 - integrated existing page renders thirteen typed cards and locked system controls
+  ---
+  duration_ms: 4.488584
+  type: 'test'
+  ...
+# Subtest: UI save permits incomplete draft, reload preserves all graph data
+ok 30 - UI save permits incomplete draft, reload preserves all graph data
+  ---
+  duration_ms: 5.15825
+  type: 'test'
+  ...
+# Subtest: legacy local draft retains manual text and full snapshot without overwrite
+ok 31 - legacy local draft retains manual text and full snapshot without overwrite
+  ---
+  duration_ms: 6.729042
+  type: 'test'
+  ...
+# Subtest: shared baseline draft preserves manual instructions and immutable original snapshot
+ok 32 - shared baseline draft preserves manual instructions and immutable original snapshot
+  ---
+  duration_ms: 5.238459
+  type: 'test'
+  ...
+# Subtest: damaged or unsupported shared baseline drafts remain untouched and are not imported
+ok 33 - damaged or unsupported shared baseline drafts remain untouched and are not imported
+  ---
+  duration_ms: 8.532916
+  type: 'test'
+  ...
+# Subtest: UI port dialog does not offer system deletion or type mutation
+ok 34 - UI port dialog does not offer system deletion or type mutation
+  ---
+  duration_ms: 1.744416
+  type: 'test'
+  ...
+# Subtest: node edits immediately invalidate check and persist without separate form submit
+ok 35 - node edits immediately invalidate check and persist without separate form submit
+  ---
+  duration_ms: 14.989917
+  type: 'test'
+  ...
+# Subtest: UI blocked check stops before any execution and never says downstream succeeded
+ok 36 - UI blocked check stops before any execution and never says downstream succeeded
+  ---
+  duration_ms: 11.570709
+  type: 'test'
+  ...
+# Subtest: storage denial fails softly without claiming save
+ok 37 - storage denial fails softly without claiming save
+  ---
+  duration_ms: 1.921666
+  type: 'test'
+  ...
+# Subtest: offline scoped edits are escaped and undoable
+ok 38 - offline scoped edits are escaped and undoable
+  ---
+  duration_ms: 2.511375
+  type: 'test'
+  ...
+# Subtest: page integration loads local contract assets and retains connect-src none
+ok 39 - page integration loads local contract assets and retains connect-src none
+  ---
+  duration_ms: 0.232709
+  type: 'test'
+  ...
+# Subtest: 13 nodes, all 15 declared edges and required sources are consistent
+ok 40 - 13 nodes, all 15 declared edges and required sources are consistent
+  ---
+  duration_ms: 2.848834
+  type: 'test'
+  ...
+# Subtest: unknown transform and wrong HumanDecision schema are rejected
+ok 41 - unknown transform and wrong HumanDecision schema are rejected
+  ---
+  duration_ms: 1.210041
+  type: 'test'
+  ...
+# Subtest: many source into one destination is rejected
+ok 42 - many source into one destination is rejected
+  ---
+  duration_ms: 0.817667
+  type: 'test'
+  ...
+# Subtest: six-shot collection into scalar port is rejected
+ok 43 - six-shot collection into scalar port is rejected
+  ---
+  duration_ms: 1.268958
+  type: 'test'
+  ...
+# Subtest: shotIndex and missing one_per_shot identity are rejected
+ok 44 - shotIndex and missing one_per_shot identity are rejected
+  ---
+  duration_ms: 0.792375
+  type: 'test'
+  ...
+# Subtest: required ports and multiple scalar sources are checked
+ok 45 - required ports and multiple scalar sources are checked
+  ---
+  duration_ms: 0.83375
+  type: 'test'
+  ...
+# Subtest: Human stages remain separated and fake approvals cannot derive packages
+ok 46 - Human stages remain separated and fake approvals cannot derive packages
+  ---
+  duration_ms: 0.886708
+  type: 'test'
+  ...
+# Subtest: prompt edits invalidate reports and saved state immediately
+ok 47 - prompt edits invalidate reports and saved state immediately
+  ---
+  duration_ms: 20.408833
+  type: 'test'
+  ...
+# Subtest: conversion rules affect plan and effective configuration fingerprints
+ok 48 - conversion rules affect plan and effective configuration fingerprints
+  ---
+  duration_ms: 34.07525
+  type: 'test'
+  ...
+# Subtest: snapshot round trip restores atoms, edges, dependencies, bindings and prompt
+ok 49 - snapshot round trip restores atoms, edges, dependencies, bindings and prompt
+  ---
+  duration_ms: 20.046667
+  type: 'test'
+  ...
+# Subtest: broken JSON, unsupported versions and malformed stages are rejected
+ok 50 - broken JSON, unsupported versions and malformed stages are rejected
+  ---
+  duration_ms: 3.182125
+  type: 'test'
+  ...
+# Subtest: storage denial does not throw or report saved
+ok 51 - storage denial does not throw or report saved
+  ---
+  duration_ms: 17.76625
+  type: 'test'
+  ...
+# Subtest: regeneration cancel preserves edits; confirmed replace is fully undoable
+ok 52 - regeneration cancel preserves edits; confirmed replace is fully undoable
+  ---
+  duration_ms: 1.610792
+  type: 'test'
+  ...
+# Subtest: node chat previews before applying and supports undo
+ok 53 - node chat previews before applying and supports undo
+  ---
+  duration_ms: 1.356916
+  type: 'test'
+  ...
+# Subtest: stale proposal and unsupported chat text cannot mutate draft
+ok 54 - stale proposal and unsupported chat text cannot mutate draft
+  ---
+  duration_ms: 0.87975
+  type: 'test'
+  ...
+# Subtest: model and capability changes are scoped; AI cannot replace Human
+ok 55 - model and capability changes are scoped; AI cannot replace Human
+  ---
+  duration_ms: 1.170417
+  type: 'test'
+  ...
+# Subtest: simple editor saves actual node configuration and invalidates simulation
+ok 56 - simple editor saves actual node configuration and invalidates simulation
+  ---
+  duration_ms: 1.272708
+  type: 'test'
+  ...
+# Subtest: typing applies changes before global save, without submitting node form
+ok 57 - typing applies changes before global save, without submitting node form
+  ---
+  duration_ms: 19.045584
+  type: 'test'
+  ...
+# Subtest: advanced execute model edits update the actual module binding
+ok 58 - advanced execute model edits update the actual module binding
+  ---
+  duration_ms: 1.890583
+  type: 'test'
+  ...
+# Subtest: empty edited input stays in draft but blocks simulation
+ok 59 - empty edited input stays in draft but blocks simulation
+  ---
+  duration_ms: 1.064541
+  type: 'test'
+  ...
+# Subtest: next-step guidance distinguishes editing, human waiting and demo completion
+ok 60 - next-step guidance distinguishes editing, human waiting and demo completion
+  ---
+  duration_ms: 0.929042
+  type: 'test'
+  ...
+# Subtest: business renderer escapes user text and keeps Human model read-only
+ok 61 - business renderer escapes user text and keeps Human model read-only
+  ---
+  duration_ms: 0.820167
+  type: 'test'
+  ...
+# Subtest: scenario picker is available outside the desktop-only toolbar
+ok 62 - scenario picker is available outside the desktop-only toolbar
+  ---
+  duration_ms: 0.138709
+  type: 'test'
+  ...
+# Subtest: flow deletion updates edges but never silently bypasses Human gate
+ok 63 - flow deletion updates edges but never silently bypasses Human gate
+  ---
+  duration_ms: 1.018333
+  type: 'test'
+  ...
+# Subtest: flow demo pauses at each Human and produces no real approval or calls
+ok 64 - flow demo pauses at each Human and produces no real approval or calls
+  ---
+  duration_ms: 0.783667
+  type: 'test'
+  ...
+# Subtest: missing image stops demo before downstream nodes
+ok 65 - missing image stops demo before downstream nodes
+  ---
+  duration_ms: 0.742291
+  type: 'test'
+  ...
+# Subtest: simulated return stops flow and editing invalidates all demo results
+ok 66 - simulated return stops flow and editing invalidates all demo results
+  ---
+  duration_ms: 0.770583
+  type: 'test'
+  ...
+# Subtest: HTML uses local assets, connection denial and explicit simulation labels
+ok 67 - HTML uses local assets, connection denial and explicit simulation labels
+  ---
+  duration_ms: 0.17325
+  type: 'test'
+  ...
+1..67
+# tests 67
+# suites 0
+# pass 67
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 178.640333

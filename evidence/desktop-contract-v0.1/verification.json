@@ -1,0 +1,121 @@
+{
+  "status": "passed",
+  "baseCommit": "23ef629beab623674a07cad4e302bc481a78abf0",
+  "branch": "codex/desktop-contract-v0.1",
+  "recordedAt": "2026-10-19T08:29:21.651Z",
+  "environment": {
+    "node": "v24.20.0",
+    "platform": "darwin",
+    "arch": "arm64"
+  },
+  "scope": "Node pure functions and VM substitutes; not browser acceptance",
+  "commands": [
+    {
+      "command": "node --check app.js",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check workbench.js",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check relay-model.js",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check relay-ui.js",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check workbench.test.cjs",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check relay-model.test.cjs",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --check verify.cjs",
+      "exitCode": 0,
+      "output": ""
+    },
+    {
+      "command": "node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs",
+      "exitCode": 0,
+      "outputFile": "node-tests.tap"
+    }
+  ],
+  "sourceFiles": {
+    "prototype/app.js": {
+      "bytes": 113579,
+      "sha256": "12b65b4d81e3892ee753ee6cd14f22ae588279bb7a7559d23233b9378b9414ea"
+    },
+    "prototype/index.html": {
+      "bytes": 24730,
+      "sha256": "6cd85c0e080468f7e839e0f41586e0904615095dc5d968b5a776b4c20d06ea7b"
+    },
+    "prototype/styles.css": {
+      "bytes": 49691,
+      "sha256": "6822e69fe21aed865ae62922f45b7f3251c0e6e109449fa72bba6c20ce748b9f"
+    },
+    "prototype/workbench.js": {
+      "bytes": 35686,
+      "sha256": "48d75c053ccb49514ada79d1b8d179713ee0ccaf93fc63b843a2fddf2a1de867"
+    },
+    "prototype/workbench.css": {
+      "bytes": 6130,
+      "sha256": "c8aed6e6c4a792d65b124385258e100cba8f5401e1ac6391eb1bb9a433945b39"
+    },
+    "prototype/relay-model.js": {
+      "bytes": 26514,
+      "sha256": "61012ea15cb63a69c9a8c5fd5ac2b4aabaf49a7e2d596c5b755c4d44e1a19170"
+    },
+    "prototype/relay-ui.js": {
+      "bytes": 36691,
+      "sha256": "2dbd62e37dd617d9394c96d260f1b3bde5b6f8b62491cb422bbc2c09b0c1f5ef"
+    },
+    "prototype/relay-ui.css": {
+      "bytes": 10637,
+      "sha256": "9991aca4b05bf95df4421780999c220d19294d6479976d692577af893b9d7da7"
+    },
+    "prototype/workbench.test.cjs": {
+      "bytes": 16491,
+      "sha256": "012afa665eb87123bfb3319647f47f46d1984998ea2df993f0a698e3dee37757"
+    },
+    "prototype/relay-model.test.cjs": {
+      "bytes": 24567,
+      "sha256": "608618ffd9bd00399167b0822eb73ca584acf4a4b8203b2f2f926d6489b22592"
+    },
+    "prototype/verify.cjs": {
+      "bytes": 3566,
+      "sha256": "592c8d27d0455e469af8d9c9bf6d14bea3f790249bfc0ea3cb1ae7a867daa048"
+    }
+  },
+  "browser": {
+    "status": "not_run",
+    "screenshots": [],
+    "domAssertions": null,
+    "consoleErrors": null,
+    "horizontalOverflow": null,
+    "networkCallCounts": null
+  },
+  "deployment": "not_run",
+  "originalSiteIntegration": "not_verified",
+  "platformExecution": "not_run",
+  "A2": "blocked",
+  "tests": {
+    "tests": 67,
+    "pass": 67,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0,
+    "todo": 0
+  },
+  "tapSha256": "846c137587191a3151ba2cee03d4ffbd2596395d120ddddfc21d9ea165222aa4"
+}

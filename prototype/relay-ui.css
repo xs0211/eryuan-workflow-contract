@@ -1,0 +1,105 @@
+body:has(.relay-app) { margin: 0; overflow: hidden; background: #f3f4f6; }
+.relay-app { --relay-ink: #20242e; --relay-sub: #7b8494; --relay-line: #e8eaef; --relay-accent: #4e6ef2; height: 100dvh; display: flex; flex-direction: column; font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", sans-serif; color: var(--relay-ink); background: #f3f4f6; }
+.relay-app * { box-sizing: border-box; }
+.relay-app button, .relay-app input, .relay-app textarea, .relay-app select { font: inherit; }
+.relay-app button { cursor: pointer; background: white; color: var(--relay-ink); border: 1px solid var(--relay-line); border-radius: 7px; padding: 7px 11px; }
+.relay-app button:hover { background: #eef1fe; border-color: #becafb; }
+.relay-app button:focus-visible, .relay-app input:focus-visible, .relay-app textarea:focus-visible, .relay-app select:focus-visible { outline: 2px solid #4e6ef2; outline-offset: 2px; }
+.relay-app button:disabled { color: #9198a5; background: #f4f5f7; cursor: not-allowed; }
+.relay-app .relay-primary { color: white; background: var(--relay-accent); border-color: var(--relay-accent); }
+.relay-app .relay-danger { color: #b43e45; }
+.relay-app h1, .relay-app h2, .relay-app h3, .relay-app p { margin: 0; }
+.relay-app h1 { font-size: 18px; }
+.relay-app h2 { font-size: 15px; }
+.relay-app h3 { font-size: 12px; font-weight: 600; }
+.relay-app small { color: var(--relay-sub); font-size: 11px; }
+.relay-header { display: flex; align-items: center; gap: 12px; padding: 14px 24px; background: white; border-bottom: 1px solid var(--relay-line); flex-shrink: 0; }
+.relay-brand { display: flex; align-items: center; gap: 10px; }
+.relay-brand > span { border-radius: 9px; padding: 6px 10px; background: #4e6ef2; color: white; font-weight: 700; font-size: 19px; }
+.relay-brand strong { display: block; font-size: 16px; }
+.relay-status { margin-left: auto; color: var(--relay-sub); font-size: 12px; }
+.relay-migration { display: flex; gap: 14px; align-items: center; padding: 7px 24px; color: #89610c; background: #fff8e5; border-bottom: 1px solid #f2e5bd; font-size: 12px; }
+.relay-migration[hidden] { display: none; }
+.relay-migration button { margin-left: auto; padding: 2px 7px; background: transparent; color: #89610c; border-color: #ead8a6; }
+.relay-progress { display: flex; align-items: center; gap: 26px; padding: 11px 24px; background: white; border-bottom: 1px solid var(--relay-line); color: var(--relay-sub); flex-shrink: 0; }
+.relay-progress .active { color: #4e6ef2; font-weight: 600; }
+.relay-progress small { margin-left: auto; }
+.relay-workspace { display: flex; flex: 1; min-height: 0; min-width: 0; overflow: hidden; }
+.relay-palette { width: 170px; flex-shrink: 0; padding: 20px 12px; background: white; border-right: 1px solid var(--relay-line); overflow: auto; }
+.relay-palette h2 { padding-left: 8px; margin-bottom: 18px; }
+.relay-palette section { margin-bottom: 22px; }
+.relay-palette h3 { color: var(--relay-sub); margin: 0 8px 8px; }
+.relay-palette button { display: flex; align-items: center; gap: 8px; text-align: left; width: 100%; border: none; padding: 9px 8px; font-size: 12px; }
+.relay-palette button span { margin-left: auto; color: #9ba3b1; }
+.relay-palette > section > small { padding: 8px; display: block; }
+.relay-kind-dot { width: 17px; height: 17px; border-radius: 5px; flex-shrink: 0; display: inline-block; background: #e4f3fc; border: 4px solid #b5dff7; }
+.relay-kind-dot.ai { background: #e5e9ff; border-color: #adbafa; }
+.relay-kind-dot.sign { background: #fff2ce; border-color: #efd58e; }
+.relay-kind-dot.group_send, .relay-kind-dot.drive_save, .relay-kind-dot.result { background: #dcf4e7; border-color: #99d2b4; }
+.relay-board { flex: 1; min-width: 0; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+.relay-board-heading { position: absolute; top: 22px; left: 26px; right: 26px; z-index: 3; pointer-events: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.relay-board-heading p { color: var(--relay-sub); font-size: 11px; margin-top: 4px; }
+.relay-board-heading button { pointer-events: auto; flex-shrink: 0; box-shadow: 0 3px 12px #20242e09; }
+.relay-scroll { flex: 1; overflow: auto; min-height: 0; background-image: radial-gradient(#dbdee4 1px, transparent 1px); background-size: 22px 22px; padding-bottom: 90px; }
+.relay-plane { position: relative; transform-origin: 0 0; }
+#relay-edges { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+#relay-edges path { fill: none; stroke: #adb7cc; stroke-width: 1.6; }
+#relay-edges path.rejected { stroke: #dca1a3; stroke-dasharray: 5 4; }
+.relay-card { position: absolute; width: 224px; border: 1px solid #e0e4eb; border-radius: 12px; padding: 12px 0 0; background: white; box-shadow: 0 3px 12px #20242e07; }
+.relay-card.selected { border-color: #879df6; box-shadow: 0 0 0 3px #4e6ef216, 0 4px 16px #20242e08; }
+.relay-card-head { display: flex; align-items: center; gap: 7px; padding: 0 11px; cursor: grab; touch-action: none; }
+.relay-card-head button { font-weight: 600; padding: 0; border: 0; background: none; text-align: left; font-size: 12px; flex: 1; }
+.relay-card-head > span { font-size: 10px; color: var(--relay-sub); flex-shrink: 0; }
+.relay-card > p { margin: 9px 12px 12px; color: var(--relay-sub); font-size: 11px; line-height: 1.6; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 35px; }
+.relay-card-ports { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding-bottom: 9px; }
+.relay-port { display: flex; align-items: center; gap: 5px; height: 29px; width: 100%; border: none !important; border-radius: 0 !important; padding: 4px 8px 4px 0 !important; font-size: 11px !important; }
+.relay-port.outputs { flex-direction: row-reverse; text-align: right; padding: 4px 0 4px 8px !important; }
+.relay-port span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.relay-port small { font-size: 9px; }
+.relay-port-dot { display: block; width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #7996ed; margin-left: -5px; border: 2px solid white; box-shadow: 0 0 0 1px #7996ed; }
+.relay-port.outputs .relay-port-dot { margin-left: 0; margin-right: -5px; }
+.relay-port-dot.file { background: #43b4a4; box-shadow: 0 0 0 1px #43b4a4; }
+.relay-port-dot.image { background: #dfad4e; box-shadow: 0 0 0 1px #dfad4e; }
+.relay-port-dot.msg { background: #b48aca; box-shadow: 0 0 0 1px #b48aca; }
+.relay-card footer { border-top: 1px solid #f1f2f5; padding: 6px 12px; font-size: 10px; color: #9098a7; }
+.relay-card footer.needs-input { color: #a87c2b; background: #fffbf2; border-radius: 0 0 12px 12px; }
+.relay-dock { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 7px; white-space: nowrap; padding: 8px; border: 1px solid #e1e4eb; border-radius: 11px; box-shadow: 0 4px 24px #20242e10; background: white; z-index: 4; }
+.relay-dock button { font-size: 12px; border: none; }
+.relay-dock span { color: var(--relay-sub); font-size: 11px; }
+.relay-divider { height: 20px; border-left: 1px solid var(--relay-line); margin: 0 3px; }
+.relay-connect-hint { position: absolute; bottom: 8px; left: 12px; right: 12px; text-align: center; font-size: 10px; color: #828a99; pointer-events: none; }
+.relay-inspector { width: 322px; flex-shrink: 0; background: white; border-left: 1px solid var(--relay-line); padding: 20px; overflow-y: auto; }
+.relay-inspector-head h2 { margin: 4px 0 9px; }
+.relay-inspector-head p { color: #8b753d; font-size: 12px; line-height: 1.7; margin-bottom: 18px; }
+.relay-field { display: block; margin: 12px 0; }
+.relay-field > span { display: block; font-size: 12px; margin-bottom: 5px; color: #626c7d; }
+.relay-app input, .relay-app select, .relay-app textarea { color: #343e50; background: white; border: 1px solid #e1e5ec; border-radius: 7px; padding: 8px 9px; max-width: 100%; }
+.relay-field input, .relay-field textarea, .relay-field select { width: 100%; }
+.relay-app textarea { resize: vertical; line-height: 1.6; }
+.relay-app details { border-top: 1px solid var(--relay-line); margin-top: 16px; padding-top: 11px; }
+.relay-app summary { cursor: pointer; font-size: 12px; font-weight: 600; }
+.relay-app details p { font-size: 12px; margin: 9px 0; }
+.relay-note { color: var(--relay-sub); font-size: 11px !important; line-height: 1.7; margin: 10px 0 !important; }
+.relay-port-setting, .relay-edge-setting { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-bottom: 1px solid #f0f2f5; padding: 9px 0; font-size: 12px; }
+.relay-port-setting small { display: block; font-size: 10px; }
+.relay-port-setting button, .relay-edge-setting button { font-size: 11px; padding: 4px 7px; flex-shrink: 0; }
+.relay-advanced h3 { margin-top: 14px; }
+.relay-advanced pre { max-width: 100%; overflow: auto; background: #f7f8fb; padding: 10px; font-size: 10px; }
+.relay-inspector-actions { display: flex; gap: 8px; margin: 20px 0; }
+.relay-inspector-actions button { font-size: 11px; }
+.relay-chat { padding-top: 18px; border-top: 1px solid var(--relay-line); margin-top: 20px; }
+.relay-chat p { font-size: 11px; color: var(--relay-sub); margin: 8px 0; }
+.relay-chat textarea, .relay-chat select { width: 100%; margin: 5px 0; }
+#relay-notice { position: fixed; bottom: 12px; right: 342px; max-width: 540px; font-size: 12px; background: #273349; color: white; border-radius: 8px; padding: 9px 14px; box-shadow: 0 4px 18px #20242e15; z-index: 12; }
+#relay-notice:empty { display: none; }
+#relay-dialog { border: 1px solid #e0e5ef; border-radius: 15px; width: min(600px, 90vw); max-height: 85vh; padding: 22px; color: var(--relay-ink); background: white; box-shadow: 0 18px 70px #18233b25; }
+#relay-dialog::backdrop { background: #17233255; }
+.relay-dialog-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-bottom: 16px; }
+#relay-dialog-body > p { margin: 12px 0; }
+#relay-dialog-body li { padding: 6px 0; }
+#relay-dialog-body li p { font-size: 12px; color: var(--relay-sub); }
+#relay-dialog-body fieldset { border: 1px solid var(--relay-line); border-radius: 8px; margin: 14px 0; display: flex; flex-wrap: wrap; gap: 14px; }
+#relay-dialog-body input[type="checkbox"], #relay-dialog-body input[type="radio"] { width: auto; }
+.relay-issue { background: #fff9ec; border-left: 3px solid #e2c278; margin: 10px 0; padding: 10px 12px; font-size: 12px; }
+.relay-issue.err { background: #fff5f4; border-color: #dfa2a0; }
+.relay-issue p { margin-top: 4px; }

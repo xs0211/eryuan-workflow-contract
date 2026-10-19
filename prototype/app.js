@@ -2816,6 +2816,10 @@ function bindEvents() {
 }
 
 function init() {
+  if (typeof initContractWorkbench === "function") {
+    initContractWorkbench();
+    return;
+  }
   bindEvents();
   restoreSavedDraft();
   renderCanvas();
