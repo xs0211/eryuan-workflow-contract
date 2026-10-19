@@ -8,7 +8,7 @@ const destination = path.join(repository, "evidence", "desktop-contract-v0.1");
 const sourceFiles = [
   "app.js", "index.html", "styles.css", "workbench.js", "workbench.css",
   "relay-model.js", "relay-ui.js", "relay-ui.css", "workbench.test.cjs",
-  "relay-model.test.cjs", "verify.cjs",
+  "relay-model.test.cjs", "desktop-qa.cjs", "desktop-qa.test.cjs", "verify.cjs",
 ];
 const report = {
   status: "failed",
@@ -40,7 +40,7 @@ function execute(args) {
 
 try {
   for (const file of sourceFiles.filter((name) => /\.(?:c?js)$/.test(name))) execute(["--check", file]);
-  const args = ["--test", "--test-reporter=tap", "workbench.test.cjs", "relay-model.test.cjs"];
+  const args = ["--test", "--test-reporter=tap", "workbench.test.cjs", "relay-model.test.cjs", "desktop-qa.test.cjs"];
   const result = spawnSync(process.execPath, args, { cwd: __dirname, encoding: "utf8", timeout: 30000 });
   const output = ((result.stdout || "") + (result.stderr || "")).replaceAll(repository, "<repository>");
   fs.writeFileSync(path.join(destination, "node-tests.tap"), output);

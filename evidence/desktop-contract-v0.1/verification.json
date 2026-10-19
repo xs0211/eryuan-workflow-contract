@@ -2,9 +2,9 @@
   "status": "passed",
   "baseCommit": "23ef629beab623674a07cad4e302bc481a78abf0",
   "branch": "codex/desktop-contract-v0.1",
-  "recordedAt": "2026-10-19T08:29:21.651Z",
+  "recordedAt": "2026-10-19T08:55:36.029Z",
   "environment": {
-    "node": "v24.20.0",
+    "node": "v22.22.3",
     "platform": "darwin",
     "arch": "arm64"
   },
@@ -13,40 +13,50 @@
     {
       "command": "node --check app.js",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97420) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check workbench.js",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97421) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-model.js",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97422) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-ui.js",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97423) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check workbench.test.cjs",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97424) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check relay-model.test.cjs",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97427) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check desktop-qa.cjs",
+      "exitCode": 0,
+      "output": "(node:97428) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
+    },
+    {
+      "command": "node --check desktop-qa.test.cjs",
+      "exitCode": 0,
+      "output": "(node:97429) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
       "command": "node --check verify.cjs",
       "exitCode": 0,
-      "output": ""
+      "output": "(node:97430) [UNDICI-EHPA] Warning: EnvHttpProxyAgent is experimental, expect them to change at any time.\n(Use `node --trace-warnings ...` to show where the warning was created)\n"
     },
     {
-      "command": "node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs",
+      "command": "node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs desktop-qa.test.cjs",
       "exitCode": 0,
       "outputFile": "node-tests.tap"
     }
@@ -92,9 +102,17 @@
       "bytes": 24567,
       "sha256": "608618ffd9bd00399167b0822eb73ca584acf4a4b8203b2f2f926d6489b22592"
     },
+    "prototype/desktop-qa.cjs": {
+      "bytes": 19324,
+      "sha256": "90e74185904b13f8d9133236f5d71687acf03a4da3b197c89ca71c94d451acb4"
+    },
+    "prototype/desktop-qa.test.cjs": {
+      "bytes": 4525,
+      "sha256": "3f2fbc8192ea2a82c9e15a934dbbe5423a9e7cdb6fa7b0f87550e7e34f985dff"
+    },
     "prototype/verify.cjs": {
-      "bytes": 3566,
-      "sha256": "592c8d27d0455e469af8d9c9bf6d14bea3f790249bfc0ea3cb1ae7a867daa048"
+      "bytes": 3630,
+      "sha256": "12e8cc8df0c9e073d03ee0e0c302bfd28923247577214454ea3ea4739d7f3978"
     }
   },
   "browser": {
@@ -110,12 +128,12 @@
   "platformExecution": "not_run",
   "A2": "blocked",
   "tests": {
-    "tests": 67,
-    "pass": 67,
+    "tests": 79,
+    "pass": 79,
     "fail": 0,
     "cancelled": 0,
     "skipped": 0,
     "todo": 0
   },
-  "tapSha256": "846c137587191a3151ba2cee03d4ffbd2596395d120ddddfc21d9ea165222aa4"
+  "tapSha256": "79df9d3c1049bd0a667bc066a885bd982064da9827524272caa0b147142dfe83"
 }

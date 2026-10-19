@@ -16,6 +16,7 @@
 4. `workbench.js` / `workbench.css`：保留业务五段与旧版工作台辅助逻辑；其中离线模拟的单元测试不代表当前新界面已经提供演练入口。
 5. `relay-model.test.cjs` / `workbench.test.cjs`：原 65 项回归，加共享基线存档迁移和损坏存档拒绝两个用例。
 6. 旧 WorkbenchDraft / PrototypeDraft 原键不覆盖；可兼容存档保留完整快照和手工说明，连接、停用状态、模型与能力明确要求重新核对，不声明无损语义迁移。
+7. `desktop-qa.cjs` / `desktop-qa.test.cjs`：当前 UI 十组浏览器脚本及 12 项安全辅助函数测试；总计 79 项 Node 回归。脚本语法和辅助函数通过不代表浏览器脚本执行通过。
 
 ## 可复跑证据
 
@@ -25,7 +26,7 @@
 node prototype/verify.cjs
 ```
 
-该脚本执行语法检查及 `node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs`，仅写入本目录的版本化证据，不启动浏览器或外部服务。
+该脚本执行语法检查及 `node --test --test-reporter=tap workbench.test.cjs relay-model.test.cjs desktop-qa.test.cjs`，仅写入本目录的版本化证据，不启动浏览器或外部服务。
 
 - `node-tests.tap`：本轮实际原始 TAP。
 - `verification.json`：命令、退出码、通过/失败/跳过数、Node 环境、TAP SHA-256 和逐文件 SHA-256。
@@ -35,6 +36,8 @@ node prototype/verify.cjs
 ## 待独立浏览器验收
 
 1440×1000，移动端本轮排除。基线 `prototype/qa.cjs` 面向旧 UI，不能直接用其历史结果确认新界面。
+
+新的 `prototype/desktop-qa.cjs` 对应当前页面，详见 `prototype/DESKTOP_QA.md`。由复核方在已有授权的浏览器环境与静态预览上运行；当前环境没有执行该脚本，也不绕过既有浏览器拒绝。输出报告绑定提交和逐资源 SHA-256，平台执行状态保持独立。
 
 1. 默认画布 13 张卡、10 ai + 3 sign、9 类入口与迁移黄条。
 2. 添加全部 9 类节点；系统端口没有删除/改类型入口，自定义口可编辑，边绑定真实端口 id。

@@ -38,12 +38,14 @@
 node --check app.js
 node --check relay-model.js
 node --check relay-ui.js
-node --test workbench.test.cjs relay-model.test.cjs
+node --test workbench.test.cjs relay-model.test.cjs desktop-qa.test.cjs
 ```
 
 测试使用纯函数与 Node VM 的 DOM、存储、网络替身。结果见 `../evidence/desktop-contract-v0.1/node-tests.tap`；不能证明浏览器 DOM、视觉、Console、溢出或真实网络计数。
 
-1440px 桌面浏览器与 ChatGPT Sites 原站整合验证待完成，没有本版截图。共享仓库整合不等于原站部署。基线 `qa.cjs` 仍面向旧版页面，不可将其旧结果当作新版桌面验收；复核范围见交付说明。
+1440px 桌面浏览器与 ChatGPT Sites 原站整合验证待完成，没有本版截图。共享仓库整合不等于原站部署。基线 `qa.cjs` 仍面向旧版页面，不可将其旧结果当作新版桌面验收。
+
+新版 `desktop-qa.cjs` 提供十组 DOM、截图、Console、溢出与受控请求检查，使用条件见 `DESKTOP_QA.md`。当前仅通过脚本语法和辅助函数单测，浏览器交互仍待在获准环境复跑；不能通过启用替代通道绕过浏览器拒绝。
 
 ## 运行政策
 
