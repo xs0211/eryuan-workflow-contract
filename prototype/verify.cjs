@@ -4,17 +4,17 @@ const crypto = require("node:crypto");
 const { spawnSync } = require("node:child_process");
 
 const repository = path.resolve(__dirname, "..");
-const destination = path.join(repository, "evidence", "desktop-contract-v0.1");
+const destination = path.join(repository, "evidence", "workflow-dialog-v1.0");
 const sourceFiles = [
   "app.js", "index.html", "styles.css", "workbench.js", "workbench.css",
-  "relay-model.js", "relay-ui.js", "relay-ui.css", "workbench.test.cjs",
-  "relay-model.test.cjs", "desktop-qa.cjs", "desktop-qa.test.cjs", "verify.cjs",
+  "relay-model.js", "relay-editor.js", "relay-ui.js", "relay-ui.css", "workbench.test.cjs",
+  "relay-model.test.cjs", "relay-editor.test.cjs", "editor-test-helpers.cjs", "desktop-qa.cjs", "desktop-qa.test.cjs", "verify.cjs",
 ];
 const report = {
   status: "failed",
   baseCommit: "23ef629beab623674a07cad4e302bc481a78abf0",
-  revisionBaseCommit: "8af933726fc9f49408f5236dd5399d826681b141",
-  branch: "codex/desktop-contract-v0.1",
+  revisionBaseCommit: "e7b1bab5c83ee2bb8c52e48cdfec5b94212ab36d",
+  branch: "codex/workflow-dialog-v1.0",
   recordedAt: new Date().toISOString(),
   environment: { node: process.version, platform: process.platform, arch: process.arch },
   scope: "Node pure functions and VM substitutes; not browser acceptance",
@@ -43,7 +43,7 @@ function execute(args) {
 
 try {
   for (const file of sourceFiles.filter((name) => /\.(?:c?js)$/.test(name))) execute(["--check", file]);
-  const args = ["--test", "--test-reporter=tap", "workbench.test.cjs", "relay-model.test.cjs", "desktop-qa.test.cjs"];
+  const args = ["--test", "--test-reporter=tap", "workbench.test.cjs", "relay-model.test.cjs", "relay-editor.test.cjs", "desktop-qa.test.cjs"];
   const result = spawnSync(process.execPath, args, { cwd: __dirname, encoding: "utf8", timeout: 30000 });
   const output = ((result.stdout || "") + (result.stderr || "")).replaceAll(repository, "<repository>");
   fs.writeFileSync(path.join(destination, "node-tests.tap"), output);

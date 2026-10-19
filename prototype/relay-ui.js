@@ -1,163 +1,151 @@
 function initContractWorkbench() {
   const contract = RelayContract;
+  const editor = RelayEditor;
   const storageKey = "eryuan-relay-desktop-draft-v1";
   const templateKey = "eryuan-relay-local-templates-v1";
   const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[character]));
   const query = (selector) => document.querySelector(selector);
   ensureBusinessFields();
-  const ui = { graph: contract.fromBusinessAtoms(state.atoms), selected: null, panel: null, history: [], templates: [], connecting: null, report: null, saved: false, zoom: 1, notice: "", chat: "" };
+  const sampleGraph = contract.fromBusinessAtoms(state.atoms);
+  const ui = { graph: editor.emptyDraft(), selected: null, panel: null, view: "business", stage: "execute", history: [], templates: [], connecting: null, report: null, proposal: null, simulation: null, saved: false, zoom: 1, notice: "", messages: [], attachments: [], job: null, epoch: 0, timer: null };
   try {
-    const saved = localStorage.getItem(storageKey);
-    if (saved) { ui.graph = contract.restore(saved); ui.saved = true; }
-    else {
+    const raw = localStorage.getItem(storageKey);
+    if (raw) {
+      const saved = JSON.parse(raw);
+      ui.graph = contract.restore(raw); ui.saved = true;
+      ui.messages = Array.isArray(saved.messages) ? saved.messages.filter((entry) => ["user", "assistant"].includes(entry?.role) && typeof entry.text === "string").slice(-100) : [];
+      ui.attachments = Array.isArray(saved.attachments) ? saved.attachments.filter((entry) => typeof entry?.name === "string" && Number.isFinite(entry.size)).slice(0, 8) : [];
+    } else {
       const legacy = JSON.parse(localStorage.getItem("eryuan-workbench-draft-v1") || "null");
-      const sharedDraft = legacy ? null : JSON.parse(localStorage.getItem("eryuan-flow-studio-draft-v1") || "null");
+      const shared = legacy ? null : JSON.parse(localStorage.getItem("eryuan-flow-studio-draft-v1") || "null");
       if (legacy?.payloadVersion === "WorkbenchDraft@1" && validateWorkbenchSnapshot(legacy.snapshot)) {
         ui.graph = contract.fromBusinessAtoms(legacy.snapshot.atoms);
         ui.graph.name = legacy.snapshot.title;
-        ui.graph.ui.sourcePrompt = legacy.snapshot.sourcePrompt;
-        ui.graph.ui.legacySnapshot = structuredClone(legacy.snapshot);
-        ui.graph.migration.atoms.notes.push("已保留旧草案完整快照与人工说明。旧自定义端口、依赖和模型需逐项重新映射；当前连线只是新契约的参考骨架，旧存档未覆盖。");
-        ui.notice = "已载入旧草案的名称与人工说明；端口映射需检查。原存档保持不变。";
-      } else if (sharedDraft && validateDraftSnapshot(sharedDraft).ok) {
-        const importedAtoms = structuredClone(sharedDraft.atoms);
-        for (const atom of importedAtoms) {
-          atom.business = {
-            ...atom.business,
-            prompt: atom.business?.prompt ?? atom.instruction ?? atom.modules.execute.action,
-          };
-        }
-        ui.graph = contract.fromBusinessAtoms(importedAtoms);
-        ui.graph.ui.sourcePrompt = sharedDraft.sourcePrompt;
-        ui.graph.ui.legacySnapshot = structuredClone(sharedDraft);
-        ui.graph.ui.legacyStorageKey = "eryuan-flow-studio-draft-v1";
-        ui.graph.migration.atoms.notes.push("已保留共享基线草案的完整快照和人工处理说明。旧端口、依赖、停用状态、执行模型和能力仍需逐项核对；旧报告和演示结果不作为当前执行证据。");
-        ui.notice = "已载入旧草案的人工说明；连接与执行配置需检查。原存档保持不变。";
-      } else if (legacy || sharedDraft) ui.notice = "旧草案格式不兼容，未覆盖原存档；当前显示初始样例。";
+        ui.graph.ui = { ...ui.graph.ui, sourcePrompt: legacy.snapshot.sourcePrompt, legacySnapshot: structuredClone(legacy.snapshot) };
+        ui.notice = "已保留旧草案和人工修改；旧连接及能力仍需核对，原存档未覆盖。";
+      } else if (shared && validateDraftSnapshot(shared).ok) {
+        const imported = structuredClone(shared.atoms);
+        imported.forEach((atom) => { atom.business = { ...atom.business, prompt: atom.business?.prompt ?? atom.instruction ?? atom.modules.execute.action }; });
+        ui.graph = contract.fromBusinessAtoms(imported);
+        ui.graph.ui = { ...ui.graph.ui, sourcePrompt: shared.sourcePrompt, legacySnapshot: structuredClone(shared) };
+        ui.notice = "已保留旧草案和人工说明；迁移不代表平台执行等价。";
+      } else if (legacy || shared) ui.notice = "旧存档不兼容，未覆盖它；请先新建草案。";
     }
-  } catch { ui.notice = "未能读取草案，已载入原始样例；原存档没有被覆盖。"; }
+  } catch { ui.notice = "浏览器中的草案暂时无法读取，原存档没有被覆盖。"; }
   try {
-    const savedTemplates = JSON.parse(localStorage.getItem(templateKey) || "[]");
-    if (Array.isArray(savedTemplates)) ui.templates = savedTemplates.filter((entry) => entry?.doc?.schema === contract.schema && entry.doc.nodes?.length === 1 && entry.doc.edges?.length === 0);
-  } catch { ui.notice = "本地模板暂不可读，不影响编辑当前草案。"; }
-  const original = structuredClone(ui.graph);
+    const entries = JSON.parse(localStorage.getItem(templateKey) || "[]");
+    if (Array.isArray(entries)) ui.templates = entries.filter((entry) => entry?.doc?.schema === contract.schema && entry.doc.nodes?.length === 1 && entry.doc.edges?.length === 0);
+  } catch { ui.notice = "卡片模板暂不可读，不影响创建流程。"; }
   const field = (label, name, value = "", type = "text") => `<label class="relay-field"><span>${escape(label)}</span><input name="${name}" type="${type}" value="${escape(value)}"></label>`;
   const area = (label, name, value = "") => `<label class="relay-field"><span>${escape(label)}</span><textarea name="${name}" rows="3">${escape(value)}</textarea></label>`;
   const select = (label, name, value, options) => `<label class="relay-field"><span>${escape(label)}</span><select name="${name}">${options.map(([option, text]) => `<option value="${escape(option)}" ${value === option ? "selected" : ""}>${escape(text)}</option>`).join("")}</select></label>`;
   const kinds = contract.definitions;
-  const categories = [["input", "输入", ["text", "image", "file", "group_messages"]], ["ai", "AI 处理", ["ai"]], ["human", "人", ["sign"]], ["output", "输出", ["group_send", "drive_save", "result"]]];
-  const stageNames = { intent: "理解与脚本", assets: "制作画面", generation: "生成视频", delivery: "合成验收" };
+  const categories = [["input", "输入", ["text", "image", "file", "group_messages"]], ["ai", "AI处理", ["ai"]], ["human", "人", ["sign"]], ["output", "输出", ["group_send", "drive_save", "result"]]];
   const glyph = (name) => `<svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${({ input: '<path d="M8 5h8M12 5v14M8 19h8"/>', ai: '<rect x="4" y="8" width="16" height="12" rx="3"/><path d="M12 8V4M8 13h1M15 13h1M9 17h6"/>', human: '<circle cx="12" cy="8" r="4"/><path d="M5 21a7 7 0 0 1 14 0"/>', output: '<path d="M6 21V4h12l-3 4 3 4H6"/>', chat: '<path d="M4 5h16v12H9l-5 4V5Z"/>', templates: '<path d="M7 4h10v17l-5-4-5 4V4Z"/>', fit: '<path d="M9 4H4v5M15 4h5v5M4 15v5h5M20 15v5h-5"/>', save: '<path d="M5 3h12l4 4v14H3V3h2ZM7 3v6h10V3M7 21v-8h10v8"/>', undo: '<path d="m8 5-5 5 5 5M3 10h11a6 6 0 0 1 0 12"/>', check: '<circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/>' })[name] || ""}</svg>`;
   query("#app").innerHTML = `
     <div class="relay-app">
       <main class="relay-workspace">
-        <section class="relay-board" aria-label="流程画布"><div class="relay-scroll" id="relay-scroll"><div class="relay-plane" id="relay-plane"><div id="relay-stages"></div><svg id="relay-edges" aria-label="端口连线"></svg><div id="relay-cards"></div></div></div></section>
-        <header class="relay-board-heading"><small>妆舟 · 流程草案</small><h1 id="relay-title"></h1><div class="relay-next"><p id="relay-next-hint">已放入视频制作样例。先确认目标，再逐步修改。</p><button id="relay-start" class="relay-primary">确认流程目标 →</button><button id="relay-goal-open" class="relay-text-button">修改目标</button></div></header>
-        <div class="relay-status-area"><span class="relay-status" id="relay-save-state"></span><section class="relay-migration" id="relay-migration"><span>这条流程迁移时有改动，请检查</span><button id="relay-migration-open">说明</button></section></div>
-        <nav class="relay-rail" aria-label="添加步骤">${categories.map(([key, label]) => `<button data-open-panel="${key}" aria-expanded="false" aria-controls="relay-palette">${glyph(key)}<span>${label}</span></button>`).join("")}</nav>
-        <aside class="relay-palette relay-floating-panel" id="relay-palette" aria-label="添加步骤选项" hidden><div class="relay-panel-head"><h2 id="relay-palette-title">添加步骤</h2><button data-close-panel aria-label="收起添加步骤">×</button></div>${categories.map(([key, label, entries]) => `<section id="relay-category-${key}" hidden><p>选择一种${label}方式，加入当前草案。</p>${entries.map((kind) => `<button data-add-kind="${kind}"><i class="relay-kind-dot ${kind}"></i>${kinds[kind].name}<span>＋</span></button>`).join("")}</section>`).join("")}</aside>
-        <aside class="relay-inspector relay-floating-panel" id="relay-inspector-panel" aria-label="步骤设置" hidden><div class="relay-panel-head"><span>步骤设置</span><button data-close-panel aria-label="关闭步骤设置">×</button></div><div id="relay-inspector"></div></aside>
-        <aside class="relay-templates-panel relay-floating-panel" id="relay-templates-panel" aria-label="卡片模板" hidden><div class="relay-panel-head"><h2>我的卡片模板</h2><button data-close-panel aria-label="关闭卡片模板">×</button></div><div id="relay-templates"></div><p class="relay-note">只保存在本浏览器，不发布到平台。</p></aside>
-        <section class="relay-chat relay-floating-panel" id="relay-chat-panel" aria-label="与流程对话" hidden><div class="relay-panel-head"><h2>与流程对话</h2><button data-close-panel aria-label="关闭流程对话">×</button></div><p>当前为离线说明编辑，不是 AI 自动改流程。先选范围，再确认写入。</p><select id="relay-chat-scope" aria-label="对话范围"><option value="flow">整个流程的目标</option><option value="node">选中步骤的处理说明</option></select><p id="relay-chat-target"></p><textarea id="relay-chat-input" rows="4" placeholder="例如：只使用商品资料里的事实，缺少资料时先提醒我。"></textarea><button id="relay-chat-apply">确认写入说明</button></section>
-        <nav class="relay-dock" aria-label="画布工具"><button data-open-panel="chat" aria-expanded="false" aria-controls="relay-chat-panel">${glyph("chat")}<span>与流程对话</span></button><button data-open-panel="templates" aria-expanded="false" aria-controls="relay-templates-panel">${glyph("templates")}<span>模板</span></button><button id="relay-check">检查连接</button><span class="relay-divider"></span><button id="relay-zoom-out" aria-label="缩小画布">−</button><span id="relay-zoom-label">100%</span><button id="relay-zoom-in" aria-label="放大画布">＋</button><button id="relay-layout" title="只整理卡片位置，不修改配置和连线，可撤销">整理布局</button><button id="relay-fit" title="显示完整流程" aria-label="显示完整流程">${glyph("fit")}</button><span class="relay-divider"></span><button id="relay-undo">${glyph("undo")}<span>撤销</span></button><button id="relay-save">${glyph("save")}<span>保存草案</span></button><button disabled title="未接入运行服务，也未获得执行授权">运行未开放</button></nav>
-        <div id="relay-connect-hint" class="relay-connect-hint">点击步骤查看；拖动标题整理布局</div>
+        <section class="relay-board" aria-label="流程画布"><div class="relay-scroll" id="relay-scroll"><div class="relay-plane" id="relay-plane"><svg id="relay-edges" aria-label="步骤连线"></svg><div id="relay-cards"></div></div></div></section>
+        <header class="studio-heading"><button id="relay-new" aria-label="新建流程" title="保留或保存当前修改后再新建">←</button><div><h1 id="relay-title"></h1><small id="relay-save-state"></small></div></header>
+        <div class="studio-migration relay-migration" id="relay-migration" hidden><span>迁移草案有差异</span><button id="relay-migration-open">查看说明</button></div>
+        <section class="studio-empty" id="relay-empty"><p class="studio-eyebrow">从一个想法开始</p><h2>把想法，变成清晰的工作流程</h2><p>在下方描述想完成的工作、能提供的资料和希望得到的结果。</p><button id="relay-manual">也可以手动搭建 →</button><button id="relay-example">填入一个视频示例</button></section>
+        <nav class="relay-rail" aria-label="添加步骤">${categories.map(([key, label]) => `<button data-open-panel="${key}" aria-expanded="false">${glyph(key)}<span>${label}</span></button>`).join("")}</nav>
+        <aside class="relay-palette relay-floating-panel" id="relay-palette" hidden><div class="relay-panel-head"><h2 id="relay-palette-title">添加步骤</h2><button data-close-panel aria-label="收起添加步骤">×</button></div>${categories.map(([key, label, entries]) => `<section id="relay-category-${key}" hidden><p>拖入画布，也可以点击加入。</p>${entries.map((kind) => `<button draggable="true" data-add-kind="${kind}" data-drag-kind="${kind}"><i class="relay-kind-dot ${kind}"></i>${kinds[kind].name}<small>空白</small></button>`).join("")}<h3>已配置样例</h3>${entries.map((kind) => `<button draggable="true" data-add-kind="${kind}" data-drag-kind="${kind}" data-preset="sample">${kinds[kind].name}<small>示例</small></button>`).join("")}</section>`).join("")}</aside>
+        <aside class="relay-inspector relay-floating-panel" id="relay-inspector-panel" aria-label="步骤详情" hidden><div class="relay-panel-head"><button id="relay-back-business" hidden>← 步骤详情</button><span id="relay-inspector-caption">步骤详情</span><button data-close-panel aria-label="关闭步骤详情">×</button></div><div id="relay-inspector"></div></aside>
+        <aside class="relay-templates-panel relay-floating-panel" id="relay-templates-panel" hidden><div class="relay-panel-head"><h2>我的卡片模板</h2><button data-close-panel aria-label="关闭模板">×</button></div><div id="relay-templates"></div><p class="relay-note">仅本地保存，不发布。</p></aside>
+        <section class="studio-transcript relay-floating-panel" id="relay-conversation-panel" aria-label="对话与修改建议" hidden><div class="relay-panel-head"><h2>对话与修改建议</h2><button data-close-panel aria-label="收起对话记录">×</button></div><div id="relay-messages"></div><div id="relay-proposal"></div></section>
+        <section class="studio-simulation relay-floating-panel" id="relay-simulation-panel" aria-label="模拟测试" hidden><div class="relay-panel-head"><h2>模拟测试</h2><button data-close-panel aria-label="收起模拟结果">×</button></div><p class="relay-note">使用合成样例；未调用真实模型或业务系统。模拟选择不生成真人批准。</p><div id="relay-simulation-results"></div></section>
+        <nav class="relay-dock" id="relay-tools" aria-label="流程工具"><button id="relay-add-step" data-main-action data-open-panel="input">＋ 添加步骤</button><button id="relay-check" data-main-action>检查流程</button><button id="relay-simulate">模拟测试</button><button id="relay-save">保存草稿</button><button data-open-panel="templates">模板</button><span class="relay-divider"></span><button id="relay-undo">撤销</button><button id="relay-fit">适应画布</button><button id="relay-layout">整理</button><button id="relay-zoom-out" aria-label="缩小画布">−</button><span id="relay-zoom-label">100%</span><button id="relay-zoom-in" aria-label="放大画布">＋</button></nav>
+        <form class="studio-composer" id="relay-composer"><div class="studio-scope"><span id="relay-scope-label">整个流程</span><button id="relay-clear-scope" type="button" aria-label="移除步骤标签，回到整个流程" hidden>×</button><button id="relay-history" type="button">对话记录</button></div><label class="studio-prompt-label" for="relay-chat-input">描述目标、资料和交付物</label><textarea id="relay-chat-input" rows="3" placeholder="想完成什么？能提供哪些资料？希望最后得到什么结果？"></textarea><div id="relay-attachments"></div><div class="studio-composer-actions"><button type="button" id="relay-attach">＋ 附件</button><input id="relay-attachment-input" type="file" multiple hidden><small id="relay-job-status" role="status">离线演示 · 不连接真实服务</small><button id="relay-cancel-job" type="button" data-main-action hidden>取消</button><button id="relay-chat-send" type="submit" data-main-action>生成流程</button></div></form>
+        <div id="relay-connect-hint" class="relay-connect-hint"></div>
       </main><div id="relay-notice" role="status" aria-live="polite"></div>
       <dialog id="relay-dialog"><div class="relay-dialog-head"><h2 id="relay-dialog-title"></h2><button id="relay-dialog-close" aria-label="关闭">×</button></div><div id="relay-dialog-body"></div></dialog>
     </div>`;
 
-  function notify(message) {
-    ui.notice = message;
-    query("#relay-notice").textContent = message;
-  }
-
-  function refreshStatus() {
-    query("#relay-save-state").textContent = ui.saved ? "已保存在本浏览器 · 未运行" : "有未保存修改 · 未运行";
-    query("#relay-undo").disabled = !ui.history.length;
-    query("#relay-title").textContent = ui.graph.name || "未命名流程";
-    query("#relay-check").textContent = ui.report ? "查看检查结果" : "检查连接";
-    query("#relay-migration").hidden = !ui.graph.migration?.atoms?.degraded;
-    const stage = ui.graph.ui?.guideStage || "goal";
-    query("#relay-start").textContent = stage === "goal" ? "确认流程目标 →" : stage === "review" ? "确认流程拆解 →" : "检查并补齐缺项 →";
-    query("#relay-next-hint").textContent = stage === "goal" ? "已放入视频制作样例。先确认目标，再逐步修改。" : stage === "review" ? "目标已记录。接下来确认每个阶段做什么。" : "点击检查中的缺项，直接进入对应步骤补充。";
-    query("#relay-goal-open").hidden = stage === "goal";
-  }
-
-  function syncPanels() {
-    query("#relay-palette").hidden = !categories.some(([key]) => key === ui.panel);
-    for (const [key, label] of categories) {
-      query(`#relay-category-${key}`).hidden = ui.panel !== key;
-      if (ui.panel === key) query("#relay-palette-title").textContent = `添加${label}`;
-    }
-    for (const key of ["inspector", "templates", "chat"]) query(`#relay-${key}-panel`).hidden = ui.panel !== key;
-    for (const button of document.querySelectorAll("[data-open-panel]")) button.setAttribute("aria-expanded", String(button.dataset.openPanel === ui.panel));
-    query("#relay-chat-target").textContent = ui.selected ? `选中步骤：${ui.graph.nodes.find((node) => node.id === ui.selected)?.name || "已移除"}` : "未选步骤；可先修改整个流程的目标，或点击画布选中步骤。";
-  }
-
-  function openPanel(panel) {
-    ui.panel = panel;
-    syncPanels();
-  }
-
-  function selectNode(nodeId) {
-    if (!ui.graph.nodes.some((node) => node.id === nodeId)) return;
-    ui.selected = nodeId;
-    openPanel("inspector");
-    renderCards(); renderInspector();
-  }
-
+  function notify(message) { ui.notice = message; query("#relay-notice").textContent = message; }
+  function stopJob() { ui.epoch += 1; clearTimeout(ui.timer); ui.timer = null; ui.job = null; }
+  function invalidate() { stopJob(); ui.report = null; ui.proposal = null; ui.simulation = null; ui.connecting = null; }
   function commit(graph, redraw = true) {
     ui.history.push(structuredClone(ui.graph));
     if (ui.history.length > 30) ui.history.shift();
-    ui.graph = graph;
-    ui.saved = false;
-    ui.report = null;
-    ui.connecting = null;
-    if (redraw) render(); else refreshStatus();
+    invalidate(); ui.graph = graph; ui.saved = false;
+    if (!graph.nodes.some((node) => node.id === ui.selected)) { ui.selected = null; if (ui.panel === "inspector") ui.panel = null; }
+    if (redraw) render(); else { refreshStatus(); renderCards(); renderConversation(); renderSimulation(); }
   }
-
-  function openDialog(title, markup) {
-    query("#relay-dialog-title").textContent = title;
-    query("#relay-dialog-body").innerHTML = markup;
-    if (!query("#relay-dialog").open) query("#relay-dialog").showModal();
-  }
-
+  function log(role, text) { ui.messages.push({ role, text }); ui.messages = ui.messages.slice(-100); ui.saved = false; renderConversation(); refreshStatus(); }
+  function openDialog(title, markup) { query("#relay-dialog-title").textContent = title; query("#relay-dialog-body").innerHTML = markup; if (!query("#relay-dialog").open) query("#relay-dialog").showModal(); }
   function closeDialog() { query("#relay-dialog").close(); }
-
-  function portButton(node, entry, direction) {
-    return `<button class="relay-port ${direction}" data-port-node="${escape(node.id)}" data-port-id="${escape(entry.id)}" data-direction="${direction}" title="${direction === "outputs" ? "从这里连出" : "把资料接到这里"}：${escape(entry.types.map((type) => contract.typeNames[type]).join("、"))}"><i class="relay-port-dot ${entry.types[0]}"></i><span>${escape(entry.name)}</span><small>${entry.required ? "必需" : ""}</small></button>`;
+  function openPanel(panel) { ui.panel = panel; syncPanels(); refreshStatus(); }
+  function clearSelection() { ui.selected = null; ui.view = "business"; if (ui.panel === "inspector") ui.panel = null; render(); }
+  function selectNode(id) { if (!ui.graph.nodes.some((node) => node.id === id)) return; ui.selected = id; ui.view = "business"; ui.panel = "inspector"; render(); }
+  function syncPanels() {
+    query("#relay-palette").hidden = !categories.some(([key]) => key === ui.panel);
+    for (const [key, name] of categories) { query(`#relay-category-${key}`).hidden = ui.panel !== key; if (ui.panel === key) query("#relay-palette-title").textContent = `添加${name}`; }
+    for (const panel of ["inspector", "templates", "conversation", "simulation"]) query(`#relay-${panel}-panel`).hidden = ui.panel !== panel;
+    query("#relay-inspector-panel").classList.toggle("advanced", ui.view === "advanced");
+    query("#relay-back-business").hidden = ui.view !== "advanced";
+    query("#relay-inspector-caption").textContent = ui.view === "advanced" ? "高级编辑" : "步骤详情";
+    for (const button of document.querySelectorAll("[data-open-panel]")) button.setAttribute("aria-expanded", String(button.dataset.openPanel === ui.panel));
   }
-
+  function refreshStatus() {
+    const empty = !ui.graph.nodes.length;
+    const selected = ui.graph.nodes.find((node) => node.id === ui.selected);
+    query("#relay-title").textContent = ui.graph.name || "未命名流程";
+    query("#relay-save-state").textContent = ui.saved ? "草稿已保存在本浏览器" : "草稿 · 尚未保存";
+    query("#relay-empty").hidden = !empty || ui.graph.ui?.editorMode === "manual";
+    query(".relay-rail").hidden = empty && ui.graph.ui?.editorMode !== "manual";
+    query("#relay-tools").hidden = empty && ui.graph.ui?.editorMode !== "manual";
+    query("#relay-migration").hidden = !ui.graph.migration?.atoms?.degraded;
+    query("#relay-scope-label").textContent = selected ? `正在修改：${selected.name}` : "整个流程";
+    query("#relay-clear-scope").hidden = !selected;
+    query("#relay-chat-send").textContent = empty ? "生成流程" : selected ? "准备修改这个步骤" : "准备修改流程";
+    query("#relay-chat-input").placeholder = selected ? "告诉我这一步哪里要改，例如：名称改为…、处理说明改为…" : "想完成什么？能提供哪些资料？希望最后得到什么结果？";
+    query("#relay-chat-input").disabled = Boolean(ui.job);
+    query("#relay-chat-send").hidden = Boolean(ui.job);
+    query("#relay-cancel-job").hidden = !ui.job;
+    query("#relay-undo").disabled = !ui.history.length;
+    query("#relay-job-status").textContent = ui.job?.label || "离线演示 · 不连接真实服务";
+    const firstIssue = ui.report?.issues.find((issue) => issue.sev === "err");
+    query("#relay-check").textContent = firstIssue ? "去修改第一个问题" : "检查流程";
+    query("#relay-add-step").textContent = empty ? "＋ 添加第一个步骤" : "＋ 添加步骤";
+    query("#relay-connect-hint").textContent = empty ? ui.graph.ui?.editorMode === "manual" ? "从左侧拖入一个步骤，或点击“添加第一个步骤”开始" : "" : ui.connecting ? "拖到兼容的输入点；按 Esc 取消" : "点击步骤查看；从输出点拖到输入点连接";
+    const primary = ui.job ? "relay-cancel-job" : ui.proposal && ui.panel === "conversation" ? "relay-apply-proposal" : selected && ui.panel === "inspector" ? ui.view === "advanced" ? "relay-advanced-save" : "relay-edit-in-chat" : empty ? ui.graph.ui?.editorMode === "manual" ? "relay-add-step" : "relay-chat-send" : "relay-check";
+    for (const button of document.querySelectorAll("[data-main-action]")) button.classList.toggle("relay-primary", button.id === primary);
+  }
+  function renderConversation() {
+    query("#relay-messages").innerHTML = ui.messages.map((message) => `<div class="studio-message ${message.role}"><small>${message.role === "user" ? "你" : "离线助手"}</small><p>${escape(message.text)}</p></div>`).join("") || "<p class='relay-note'>描述需求后，修改建议会出现在这里；只有确认应用才改动草案。</p>";
+    query("#relay-proposal").innerHTML = ui.proposal ? `<section class="studio-proposal"><h3>准备进行这些修改</h3><ul>${ui.proposal.changes.map((change) => `<li>${escape(change)}</li>`).join("")}</ul><button id="relay-apply-proposal" data-main-action>应用修改</button><button id="relay-discard-proposal">暂不修改</button></section>` : "";
+    query("#relay-attachments").innerHTML = ui.attachments.map((file, index) => `<span>${escape(file.name)} · 仅记录名称<button type="button" data-remove-attachment="${index}" aria-label="移除附件 ${escape(file.name)}">×</button></span>`).join("");
+  }
   function renderCards() {
-    const issues = contract.validate(ui.graph);
+    const issues = editor.check(ui.graph).issues;
     query("#relay-cards").innerHTML = ui.graph.nodes.map((node) => {
-      const errors = issues.filter((entry) => entry.node_id === node.id && entry.sev === "err");
-      const business = node.params?.businessContract;
-      return `<article class="relay-card ${ui.selected === node.id ? "selected" : ""}" data-node="${escape(node.id)}" data-kind="${node.kind}" style="left:${Number.isFinite(node.x) ? node.x : 0}px;top:${Number.isFinite(node.y) ? node.y : 0}px"><div class="relay-card-head" data-drag-node="${escape(node.id)}"><i class="relay-kind-dot ${node.kind}"></i><button data-select-node="${escape(node.id)}">${escape(node.name)}</button><span>${node.kind === "sign" ? "真人" : node.kind === "ai" ? "AI" : "资料"}</span></div><p>${escape(business?.business?.purpose || (node.kind === "sign" ? "请指定一个人，确认后才能继续。" : "点击补充资料和处理方式。"))}</p><div class="relay-card-ports"><div>${node.inputs.map((entry) => portButton(node, entry, "inputs")).join("")}</div><div>${node.outputs.map((entry) => portButton(node, entry, "outputs")).join("")}</div></div><footer class="${errors.length ? "needs-input" : ""}">${errors.length ? `还需补齐 ${errors.length} 项` : "可编辑 · 尚未执行"}</footer></article>`;
+      const info = editor.describe(node);
+      const errors = issues.filter((issue) => issue.node_id === node.id && issue.sev === "err");
+      const status = ui.simulation?.records.find((record) => record.id === node.id);
+      return `<article class="relay-card ${ui.selected === node.id ? "selected" : ""}" data-node="${escape(node.id)}" data-kind="${node.kind}" style="left:${Number.isFinite(node.x) ? node.x : 0}px;top:${Number.isFinite(node.y) ? node.y : 0}px;min-height:${Math.max(138, Math.max(node.inputs.length, node.outputs.length) * 23 + 50)}px"><div class="relay-card-head" data-drag-node="${escape(node.id)}"><i class="relay-kind-dot ${node.kind}"></i><button data-select-node="${escape(node.id)}">${escape(node.name)}</button><span>${node.kind === "sign" ? "真人" : node.kind === "ai" ? "AI" : "资料"}</span></div><p class="studio-card-task">${escape(info.task)}</p><div class="studio-card-summary"><p>需要 · ${escape(info.input)}</p><p>得到 · ${escape(info.output)}</p></div><div class="relay-card-ports"><div>${node.inputs.map((entry) => portButton(node, entry, "inputs")).join("")}</div><div>${node.outputs.map((entry) => portButton(node, entry, "outputs")).join("")}</div></div><footer class="${errors.length ? "needs-input" : ""}">${status ? `模拟：${simulationLabel(status.status)}` : errors.length ? "需要补充 · 点击查看" : "草案 · 待检查"}</footer></article>`;
     }).join("");
-    const cardHeights = new Map([...document.querySelectorAll(".relay-card")].map((card) => [card.dataset.node, card.offsetHeight]));
-    const width = Math.max(300, ...ui.graph.nodes.map((node) => (Number.isFinite(node.x) ? node.x : 0) + 264));
-    const height = Math.max(220, ...ui.graph.nodes.map((node) => (Number.isFinite(node.y) ? node.y : 0) + (cardHeights.get(node.id) || 175) + 25));
-    query("#relay-stages").innerHTML = Object.entries(stageNames).map(([stage, name]) => {
-      const nodes = ui.graph.nodes.filter((node) => node.params?.businessContract?.stage === stage);
-      return nodes.length ? `<div class="relay-stage-label" style="left:${Math.min(...nodes.map((node) => node.x))}px;top:${Math.max(0, Math.min(...nodes.map((node) => node.y)) - 40)}px">${escape(name)}</div>` : "";
-    }).join("");
-    query("#relay-plane").style.width = `${width}px`;
-    query("#relay-plane").style.height = `${height}px`;
+    const heights = new Map([...document.querySelectorAll(".relay-card")].map((card) => [card.dataset.node, card.offsetHeight]));
+    query("#relay-plane").style.width = `${Math.max(360, ...ui.graph.nodes.map((node) => (Number.isFinite(node.x) ? node.x : 0) + 275))}px`;
+    query("#relay-plane").style.height = `${Math.max(220, ...ui.graph.nodes.map((node) => (Number.isFinite(node.y) ? node.y : 0) + (heights.get(node.id) || 160) + 30))}px`;
     query("#relay-plane").style.zoom = ui.zoom;
     query("#relay-zoom-label").textContent = `${Math.round(ui.zoom * 100)}%`;
+    query("#relay-cards").classList.toggle("connecting", Boolean(ui.connecting));
     requestAnimationFrame(drawConnections);
   }
-
+  function portButton(node, entry, direction) {
+    const source = ui.connecting && ui.graph.nodes.find((current) => current.id === ui.connecting.nodeId)?.outputs.find((port) => port.id === ui.connecting.portId);
+    const compatible = source && direction === "inputs" && node.id !== ui.connecting.nodeId && entry.types.includes(source.types[0]);
+    return `<button class="relay-port ${direction} ${compatible ? "compatible" : ""}" data-port-node="${escape(node.id)}" data-port-id="${escape(entry.id)}" data-direction="${direction}" aria-label="${escape(node.name)} ${direction === "outputs" ? "输出" : "输入"} ${escape(entry.name)}" title="${escape(entry.name)}：${entry.types.map((type) => contract.typeNames[type]).join("、")}"><i class="relay-port-dot ${entry.types[0]}"></i><span>${escape(entry.name)}</span></button>`;
+  }
   function fitCanvas() {
     const viewport = query("#relay-scroll");
     const plane = query("#relay-plane");
     if (!viewport.clientWidth || !viewport.clientHeight) return;
-    ui.zoom = Math.max(0.25, Math.min(1, (viewport.clientWidth - 210) / parseFloat(plane.style.width), (viewport.clientHeight - 270) / parseFloat(plane.style.height)));
-    renderCards();
-    viewport.scrollLeft = 0;
-    viewport.scrollTop = 0;
+    ui.zoom = Math.max(0.25, Math.min(1, (viewport.clientWidth - 210) / parseFloat(plane.style.width), (viewport.clientHeight - 430) / parseFloat(plane.style.height)));
+    renderCards(); viewport.scrollLeft = 0; viewport.scrollTop = 0;
   }
-
+  function render() { renderCards(); renderInspector(); renderConversation(); renderSimulation(); renderTemplates(); syncPanels(); refreshStatus(); if (ui.notice) notify(ui.notice); }
   function drawConnections() {
     const plane = query("#relay-plane");
     if (!plane) return;
@@ -203,22 +191,98 @@ function initContractWorkbench() {
     return content;
   }
 
+  function portSettings(node) {
+    return `<details class="relay-advanced"><summary>输入、输出与连线（技术设置）</summary>${["inputs", "outputs"].map((direction) => `<h3>${direction === "inputs" ? "需要的资料" : "交付的内容"}</h3>${node[direction].map((port) => `<div class="relay-port-setting"><span>${escape(port.name)}<small>${port.types.map((type) => contract.typeNames[type]).join("、")} · ${contract.systemPort(node, direction, port.id) ? "系统口（只可改名）" : "自定义"}</small></span><button data-edit-port="${escape(port.id)}" data-port-direction="${direction}">编辑</button></div>`).join("")}${(direction === "inputs" ? kinds[node.kind].customInputs : kinds[node.kind].customOutputs)?.length ? `<button data-new-port="${direction}">＋ 增加${direction === "inputs" ? "输入" : "输出"}</button>` : ""}`).join("")}<h3>关联连线</h3>${ui.graph.edges.filter((edge) => edge.from === node.id || edge.to === node.id).map((edge) => `<div class="relay-edge-setting"><span>${escape(ui.graph.nodes.find((entry) => entry.id === edge.from)?.name || edge.from)} → ${escape(ui.graph.nodes.find((entry) => entry.id === edge.to)?.name || edge.to)}</span><button data-remove-edge="${escape(edge.id)}">移除</button></div>`).join("") || "<p>尚未连接</p>"}</details>`;
+  }
   function renderInspector() {
     const node = ui.graph.nodes.find((entry) => entry.id === ui.selected);
-    if (!node) { query("#relay-inspector").innerHTML = "<h2>选择一个步骤</h2><p>从左侧添加，或点击画布上的卡片。</p>"; return; }
-    const business = node.params?.businessContract;
-    const issues = contract.validate(ui.graph).filter((entry) => entry.node_id === node.id);
-    query("#relay-inspector").innerHTML = `<div class="relay-inspector-head"><small>${escape(kinds[node.kind].name)}</small><h2>${escape(node.name)}</h2><p>${escape(issues[0]?.msg || "补充处理说明后，点击保存步骤。")}</p></div>${business?.business ? `<div class="relay-business-summary"><strong>这一步要完成什么</strong><p>${escape(business.business.purpose)}</p><details><summary>要准备什么、会得到什么</summary><p>需要：${escape(business.business.input)}</p><p>产出：${escape(business.business.output)}</p><p>这里展示业务样例，不代表资料或结果已生成。</p></details></div>` : ""}<form id="relay-node-form">${field("步骤名称", "name", node.name)}${configFields(node)}<button class="relay-primary" type="submit">保存步骤修改</button></form><details class="relay-advanced"><summary>输入、输出与连接</summary>${["inputs", "outputs"].map((direction) => `<h3>${direction === "inputs" ? "需要的资料" : "交付的内容"}</h3>${node[direction].map((entry) => `<div class="relay-port-setting"><span>${escape(entry.name)}<small>${entry.types.map((type) => contract.typeNames[type]).join("、")} · ${contract.systemPort(node, direction, entry.id) ? "系统口（只可改名）" : "自定义"}</small></span><button type="button" data-edit-port="${escape(entry.id)}" data-port-direction="${direction}">编辑</button></div>`).join("")}${(direction === "inputs" ? kinds[node.kind].customInputs : kinds[node.kind].customOutputs)?.length ? `<button data-new-port="${direction}" type="button">＋ 增加${direction === "inputs" ? "输入" : "输出"}</button>` : ""}`).join("")}<h3>关联连线</h3>${ui.graph.edges.filter((edge) => edge.from === node.id || edge.to === node.id).map((edge) => `<div class="relay-edge-setting"><small>${escape(ui.graph.nodes.find((entry) => entry.id === edge.from)?.name || edge.from)} → ${escape(ui.graph.nodes.find((entry) => entry.id === edge.to)?.name || edge.to)}</small><button data-remove-edge="${escape(edge.id)}" type="button">移除</button></div>`).join("") || "<p>尚未连接</p>"}</details>${business ? `<details class="relay-advanced"><summary>业务五段与兼容说明</summary><p class="relay-note">以下保留原业务合同，不代表平台已执行。五段不是五个独立节点。</p>${[["input", "接收"], ["check", "检查"], ["execute", "处理"], ["review", "核验"], ["output", "交付"]].map(([key, title]) => `<details><summary>${title}</summary><p>${escape(business.modules?.[key]?.action)}</p><p>处理者：${escape(business.modules?.[key]?.executor)}</p><p>结果：尚未执行</p><small>${escape(business.modules?.[key]?.evidence)}</small></details>`).join("")}</details>` : ""}<details class="relay-advanced"><summary>开发详情</summary><pre>${escape(JSON.stringify({ id: node.id, kind: node.kind, inputs: node.inputs, outputs: node.outputs, issues }, null, 2))}</pre><p>授权、资源版本、精确产物审批和真实执行仍待平台验证。</p></details><div class="relay-inspector-actions"><button id="relay-save-template">存为卡片模板</button><button id="relay-remove-node" class="relay-danger">删除步骤</button></div>`;
+    if (!node) { query("#relay-inspector").innerHTML = ""; return; }
+    const info = editor.describe(node);
+    const issues = editor.check(ui.graph).issues.filter((issue) => issue.node_id === node.id && issue.sev === "err");
+    const nextNames = ui.graph.edges.filter((edge) => edge.from === node.id).map((edge) => `${node.kind === "sign" ? edge.fromPort === "approved" ? "通过后：" : "退回后：" : ""}${ui.graph.nodes.find((entry) => entry.id === edge.to)?.name || "待修复连接"}`);
+    if (ui.view === "business") {
+      query("#relay-inspector").innerHTML = `<div class="relay-inspector-head"><h2>${escape(node.name)}</h2><p>${issues.length ? escape(issues[0].msg) : "这是可编辑的计划，尚未实际执行。"}</p></div><dl class="studio-business">${[["主要任务", info.task], ["需要什么", info.input], ["会得到什么", info.output], ["输出格式", info.format], ["处理方式", info.processor], ["下一步", nextNames.join("；") || "暂无后续步骤，可继续连线或作为交付点"]].map(([label, value]) => `<dt>${label}</dt><dd>${escape(value)}</dd>`).join("")}</dl><button id="relay-edit-in-chat" data-main-action>在对话中修改这个步骤</button><button id="relay-advanced-open">高级编辑 →</button><div class="relay-inspector-actions"><button id="relay-save-template">存为模板</button><button id="relay-remove-node" class="relay-danger">删除步骤</button></div>`;
+      return;
+    }
+    const stage = editor.stagesFor(node)[ui.stage];
+    const allowedActors = node.kind === "sign" && ui.stage === "execute" ? [["human", editor.actors.human]] : node.kind === "sign" && ui.stage === "review" ? [["approval_validator", editor.actors.approval_validator]] : Object.entries(editor.actors).filter(([key]) => !["human", "approval_validator"].includes(key));
+    query("#relay-inspector").innerHTML = `<h2>${escape(node.name)}</h2><nav class="studio-stage-tabs" aria-label="原子内部五阶段">${editor.stageKeys.map((key) => `<button data-stage="${key}" aria-pressed="${ui.stage === key}">${editor.stageNames[key]}</button>`).join("")}</nav><form id="relay-stage-form"><h3>${editor.stageNames[ui.stage]}</h3>${area("这一步要做什么", "stage_action", stage.action)}${area("需要什么输入", "stage_input", stage.input)}${field("输出什么格式", "stage_outputFormat", stage.outputFormat)}${select("由谁处理", "stage_executor", stage.executor, allowedActors)}${field("需要什么能力（描述或已登记引用）", "stage_capability", stage.capability)}${field("模型（仅配置引用，尚未授权）", "stage_model", stage.model)}${select("遇到问题怎么办", "stage_onFailure", stage.onFailure, Object.entries(editor.failureActions))}<p class="relay-note">五阶段属于同一个原子。真人作决定与平台核验分开；这里的编辑不会调用工具。</p></form><details class="relay-advanced"><summary>模型、审核人及工具的技术设置</summary><form id="relay-node-form">${field("步骤名称", "name", node.name)}${configFields(node)}<button type="submit">保存技术配置</button></form>${select("模拟情景（不影响真实系统）", "simulation_scenario", node.params.simulationScenario || "normal", [["normal", "正常合成样例"], ["missing", "缺少资料"], ["failure", "处理失败"]])}</details>${portSettings(node)}<details class="relay-advanced"><summary>原始合同与版本详情</summary><pre>${escape(JSON.stringify({ kind: node.kind, id: node.id, original: node.params.businessContract || null }, null, 2))}</pre><p>这些是本地设计配置；不代表资源已授权或平台已执行。</p></details><div class="studio-advanced-footer"><button id="relay-advanced-save" data-main-action>保存并返回画布</button></div>`;
   }
-
-  function render() {
-    refreshStatus(); renderCards(); renderInspector();
-    syncPanels();
-    query("#relay-templates").innerHTML = ui.templates.map((entry, index) => `<button data-insert-template="${index}">${escape(entry.name)}</button>`).join("") || "<small>选中步骤后可保存模板</small>";
-    query("#relay-connect-hint").textContent = "点输出端口，再点目标输入端口连接；拖动标题整理布局";
-    if (ui.notice) notify(ui.notice);
+  function renderTemplates() {
+    query("#relay-templates").innerHTML = ui.templates.map((entry, index) => `<button draggable="true" data-drag-template="${index}" data-insert-template="${index}">${escape(entry.name)}</button>`).join("") || "<p>选中一个步骤后，可将它存为模板。</p>";
   }
-
+  function showCheck() {
+    ui.report = editor.check(ui.graph);
+    const errors = ui.report.issues.filter((issue) => issue.sev === "err");
+    openDialog(errors.length ? "需要补充" : "可以继续", `<p>${errors.length ? "流程停在检查阶段，没有执行任何步骤。草稿仍可保存。" : "结构检查完成，可以做合成样例模拟；不代表真实运行已就绪。"}</p>${ui.report.issues.map((issue) => `<div class="relay-issue ${issue.sev}"><strong>${escape(ui.graph.nodes.find((node) => node.id === issue.node_id)?.name || "整个流程")}</strong><p>${escape(issue.msg)}</p>${ui.graph.nodes.some((node) => node.id === issue.node_id) ? `<button data-resolve-node="${escape(issue.node_id)}">去修改 →</button>` : ""}</div>`).join("")}<p class="relay-note">检查只看结构。授权、真实审批、模型和媒体服务仍未开放。</p>`);
+    refreshStatus();
+  }
+  function simulationLabel(status) { return ({ pending: "等待", processing: "处理中", waiting: "等你选择", passed: "模拟通过", needs_input: "需要补充", failed: "失败", skipped: "未选中分支", cancelled: "已取消", not_started: "未执行", completed: "模拟完成" })[status] || status; }
+  function renderSimulation() {
+    if (!ui.simulation) { query("#relay-simulation-results").innerHTML = ""; return; }
+    const waiting = ui.simulation.records.find((record) => record.status === "waiting");
+    query("#relay-simulation-results").innerHTML = `<h3>${simulationLabel(ui.simulation.status)}</h3>${ui.simulation.records.map((record) => `<div class="studio-sim-record" data-sim-node="${escape(record.id)}" data-sim-status="${record.status}"><strong>${escape(ui.graph.nodes.find((node) => node.id === record.id)?.name || record.id)}</strong><span>${simulationLabel(record.status)}</span><p>${escape(record.output)}</p></div>`).join("")}${waiting ? '<div class="studio-sim-decisions"><button data-sim-decision="approved">模拟同意（非正式批准）</button><button data-sim-decision="rejected">模拟退回</button></div>' : ""}`;
+  }
+  function saveDraft() {
+    try {
+      const payload = { ...contract.snapshot(ui.graph), messages: ui.messages, attachments: ui.attachments };
+      localStorage.setItem(storageKey, JSON.stringify(payload)); ui.saved = true; refreshStatus(); notify("草稿已保存在本浏览器；未上传、未运行、未发布。"); return true;
+    } catch { ui.saved = false; refreshStatus(); notify("浏览器未允许保存，请不要关闭页面；修改尚未持久化。"); return false; }
+  }
+  function advanceSimulation(decision) {
+    if (!ui.simulation || !ui.job || ui.job.kind !== "simulation") return;
+    const epoch = ui.epoch;
+    try {
+      ui.simulation = editor.tick(ui.graph, ui.simulation, decision);
+      renderSimulation(); renderCards();
+      if (ui.simulation.status === "running") ui.timer = setTimeout(() => { if (ui.epoch === epoch) advanceSimulation(); }, 360);
+      else if (ui.simulation.status !== "waiting") { stopJob(); refreshStatus(); }
+    } catch (error) { stopJob(); notify(error.message); refreshStatus(); }
+  }
+  function startSimulation() {
+    ui.report = editor.check(ui.graph);
+    if (!ui.report.simulationAllowed) { showCheck(); return; }
+    stopJob(); ui.proposal = null;
+    ui.simulation = editor.simulation(ui.graph);
+    ui.job = { kind: "simulation", label: "正在模拟 · 不调用真实服务" };
+    ui.panel = "simulation"; render(); advanceSimulation();
+  }
+  function sendMessage() {
+    if (ui.job) return;
+    const message = query("#relay-chat-input").value.trim();
+    if (!message) { notify("先写下想完成的工作、能提供的资料和想得到的结果。"); query("#relay-chat-input").focus(); return; }
+    log("user", message);
+    if (!ui.graph.nodes.length) {
+      stopJob();
+      const epoch = ui.epoch;
+      const base = editor.signature(ui.graph);
+      ui.job = { kind: "generation", label: "正在理解需求（离线模拟）" }; refreshStatus();
+      ui.timer = setTimeout(() => {
+        if (epoch !== ui.epoch || base !== editor.signature(ui.graph)) return;
+        ui.job.label = "正在安排步骤（离线模拟）"; refreshStatus();
+        ui.timer = setTimeout(() => {
+          if (epoch !== ui.epoch || base !== editor.signature(ui.graph)) return;
+          try {
+            const graph = editor.generate(message, sampleGraph, ui.attachments);
+            commit(graph); ui.selected = null; ui.panel = null;
+            query("#relay-chat-input").value = "";
+            log("assistant", `已按离线样例整理出 ${graph.nodes.length} 个步骤。下一步点击“检查流程”，或选中步骤继续修改；这不是模型真实生成。`);
+            render(); requestAnimationFrame(fitCanvas);
+          } catch (error) { stopJob(); log("assistant", error.message); openPanel("conversation"); notify(error.message); }
+        }, 360);
+      }, 240);
+    } else {
+      try {
+        ui.proposal = editor.propose(ui.graph, message, ui.selected);
+        if (ui.attachments.length) {
+          const node = ui.proposal.graph.nodes.find((entry) => entry.id === ui.selected);
+          if (node) node.params.referenceAttachments = structuredClone(ui.attachments); else ui.proposal.graph.ui = { ...ui.proposal.graph.ui, referenceAttachments: structuredClone(ui.attachments) };
+          ui.proposal.changes.push("记录附件名称与大小；未读取文件内容、未上传、未绑定真实产物");
+        }
+        query("#relay-chat-input").value = ""; renderConversation(); openPanel("conversation");
+      } catch (error) { log("assistant", error.message); openPanel("conversation"); }
+    }
+  }
   function editPortDialog(direction, portId) {
     const node = ui.graph.nodes.find((entry) => entry.id === ui.selected);
     const existing = node[direction].find((entry) => entry.id === portId);
@@ -248,34 +312,6 @@ function initContractWorkbench() {
     });
   }
 
-  function showCheck() {
-    ui.report = {
-      ...contract.diagramCheck(ui.graph),
-      validatorVersion: "desktop-contract-0.1",
-      validatedAt: new Date().toISOString(),
-      hashAlgorithm: "prototype-fnv1a64-design-only",
-      nonSecurityHash: true,
-      intentHash: prototypeDigest({ goal: ui.graph.ui?.sourcePrompt || "", businessRequirements: "01.1/H02,H05,H10" }),
-      planHash: prototypeDigest(ui.graph),
-      effectiveConfigHash: prototypeDigest({ definitions: contract.definitions, policy: "local-draft-only/no-execution" }),
-    };
-    refreshStatus();
-    const errors = ui.report.issues.filter((entry) => entry.sev === "err");
-    openDialog(errors.length ? "先补齐这些内容" : "连接检查完成", `<p>${errors.length ? "流程已停在检查阶段，没有执行任何步骤。草案仍可保存。" : "只检查结构，不代表权限、审批或平台能力已就绪。没有执行 AI、媒体或业务步骤。"}</p>${ui.report.issues.map((entry) => `<div class="relay-issue ${entry.sev}"><strong>${escape(ui.graph.nodes.find((node) => node.id === entry.node_id)?.name || "流程")}</strong><p>${escape(entry.msg)}</p>${entry.node_id && ui.graph.nodes.some((node) => node.id === entry.node_id) ? `<button data-resolve-node="${escape(entry.node_id)}">去这一步补充 →</button>` : ""}</div>`).join("")}${!errors.length ? `<ol>${ui.report.steps.map((step) => `<li><strong>${escape(ui.graph.nodes.find((node) => node.id === step.id)?.name)}</strong><p>${escape(step.text)}</p></li>`).join("")}</ol>` : ""}<p class="relay-note">这是本地结构检查，不是样例执行。真人审批、模型、媒体和业务服务都不会被调用。</p>`);
-  }
-
-  function showBreakdown() {
-    const groups = Object.entries(stageNames).map(([stage, name]) => [name, ui.graph.nodes.filter((node) => node.params?.businessContract?.stage === stage)]);
-    const additional = ui.graph.nodes.filter((node) => !Object.hasOwn(stageNames, node.params?.businessContract?.stage));
-    if (additional.length) groups.push(["新增步骤", additional]);
-    openDialog("确认这条流程怎么完成工作", `<p>当前是已载入的妆舟样例及你的修改，不是模型重新生成的计划。核对下面的步骤，不合适的可点击后修改。</p>${groups.map(([name, nodes]) => `<section class="relay-breakdown"><h3>${name}</h3>${nodes.map((node) => `<button data-resolve-node="${escape(node.id)}"><span>${escape(node.name)}</span><small>${node.kind === "sign" ? "需要真人决定" : "准备与处理"} →</small></button>`).join("") || "<p>此阶段暂无步骤，请检查是否遗漏。</p>"}</section>`).join("")}<p class="relay-note">确认拆解只表示你已查看计划，不是业务审批，也不会启动运行。</p><button id="relay-guide-check" class="relay-primary">确认拆解，检查缺项 →</button>`);
-    query("#relay-guide-check").onclick = () => {
-      const next = structuredClone(ui.graph);
-      next.ui = { ...next.ui, guideStage: "check" };
-      commit(next); showCheck();
-    };
-  }
-
   function updateNodeForm(form, redraw = true) {
     const next = structuredClone(ui.graph);
     const node = next.nodes.find((entry) => entry.id === ui.selected);
@@ -303,166 +339,203 @@ function initContractWorkbench() {
       delete node.gate.ttl_minutes;
       if (data.get("gate_sign_mode")) node.gate.sign_mode = data.get("gate_sign_mode"); else delete node.gate.sign_mode;
     }
+    if (node.kind === "ai") { node.params.editorTask = node.prompts.p2; node.params.editorStages = editor.stagesFor(node); node.params.editorStages.execute.action = node.prompts.p2; }
     commit(next, redraw);
     if (redraw) notify("步骤已修改，旧检查已失效。请再检查并保存草案。");
     else renderCards();
   }
 
+  function addNode(kind, preset, position) {
+    const next = structuredClone(ui.graph);
+    const node = contract.createNode(kind, contract.newId("node_", next.nodes.map((entry) => entry.id)), position || canvasPosition());
+    if (preset === "sample") {
+      node.name += "示例";
+      if (kind === "ai") node.prompts.p2 = "根据提供的资料整理重点；缺少事实时先提醒，不编造内容。";
+      if (kind === "text") node.params.content = "合成示例：白色陶瓷杯，容量300毫升。";
+      node.params.editorTask = kind === "sign" ? "请真人核对内容后作决定" : "按示例要求处理资料";
+    }
+    node.params.editorStages = editor.stagesFor(node);
+    next.nodes.push(node); next.ui = { ...next.ui, editorMode: "manual" };
+    commit(next); selectNode(node.id); requestAnimationFrame(fitCanvas);
+    notify("步骤已加入。可以在下方描述修改，也可以打开高级编辑。");
+  }
+  function canvasPosition(event) {
+    const viewport = query("#relay-scroll").getBoundingClientRect();
+    const plane = query("#relay-plane").getBoundingClientRect();
+    return { x: Math.max(0, ((event?.clientX ?? viewport.left + viewport.width / 2) - plane.left) / ui.zoom - 112), y: Math.max(0, ((event?.clientY ?? viewport.top + (viewport.height - 220) / 2) - plane.top) / ui.zoom - 50) };
+  }
+  function newDraft(manual) {
+    const proceed = () => {
+      commit(editor.emptyDraft()); ui.graph.ui.editorMode = manual ? "manual" : "new";
+      ui.selected = null; ui.messages = []; ui.attachments = []; ui.view = "business"; ui.panel = manual ? "input" : null;
+      closeDialog(); render(); requestAnimationFrame(fitCanvas);
+    };
+    if (!ui.graph.nodes.length) { proceed(); return; }
+    openDialog("保留修改，还是新建草稿？", '<p>新建会切换到空画布，当前图会保留在撤销记录中；需要长期保留时先保存。不会默默覆盖你的步骤。</p><button id="relay-keep-edits">保留我的修改</button><button id="relay-new-confirm">生成新草稿</button>');
+    query("#relay-keep-edits").onclick = closeDialog;
+    query("#relay-new-confirm").onclick = proceed;
+  }
+  function stageInput(form) {
+    const data = new FormData(form);
+    const fields = Object.fromEntries([...data].filter(([key]) => key.startsWith("stage_")).map(([key, value]) => [key.slice(6), value]));
+    try { commit(editor.updateStage(ui.graph, ui.selected, ui.stage, fields), false); }
+    catch (error) { notify(error.message); renderInspector(); }
+  }
   query("#app").addEventListener("submit", (event) => {
-    if (event.target.id !== "relay-node-form") return;
+    if (!["relay-node-form", "relay-stage-form", "relay-composer"].includes(event.target.id)) return;
     event.preventDefault();
-    updateNodeForm(event.target);
+    if (event.target.id === "relay-node-form") updateNodeForm(event.target);
+    else if (event.target.id === "relay-stage-form") stageInput(event.target);
+    else sendMessage();
   });
   query("#app").addEventListener("input", (event) => {
-    const form = event.target.closest("#relay-node-form");
-    if (form) updateNodeForm(form, false);
-    else if (event.target.closest("#relay-goal-form")) { ui.report = null; ui.saved = false; refreshStatus(); }
+    const nodeForm = event.target.closest("#relay-node-form");
+    const stageForm = event.target.closest("#relay-stage-form");
+    if (nodeForm) updateNodeForm(nodeForm, false);
+    else if (stageForm) stageInput(stageForm);
+    else if (event.target.name === "simulation_scenario") { const next = structuredClone(ui.graph); next.nodes.find((node) => node.id === ui.selected).params.simulationScenario = event.target.value; commit(next, false); }
   });
-
+  let ignorePortClick = false;
   query("#app").addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (!button) {
-      const card = event.target.closest(".relay-card");
-      if (card) selectNode(card.dataset.node);
-      return;
-    }
+    if (!button) { const card = event.target.closest(".relay-card"); if (card) selectNode(card.dataset.node); return; }
     try {
       if (button.dataset.openPanel) openPanel(ui.panel === button.dataset.openPanel ? null : button.dataset.openPanel);
-      if (button.dataset.closePanel !== undefined) { openPanel(null); ui.selected = null; renderCards(); }
-      if (button.dataset.selectNode) selectNode(button.dataset.selectNode);
+      if (button.dataset.closePanel !== undefined) { if (ui.panel === "inspector") clearSelection(); else openPanel(null); }
+      if (button.dataset.selectNode) { ui.proposal = null; selectNode(button.dataset.selectNode); }
       if (button.dataset.resolveNode) { closeDialog(); selectNode(button.dataset.resolveNode); }
-      if (button.dataset.addKind) {
-        const next = structuredClone(ui.graph);
-        const node = contract.createNode(button.dataset.addKind, contract.newId("node_", next.nodes.map((entry) => entry.id)), { x: 70 + (next.nodes.length % 4) * 290, y: 100 + Math.floor(next.nodes.length / 4) * 310 });
-        next.nodes.push(node); ui.selected = node.id; ui.panel = "inspector"; commit(next); requestAnimationFrame(fitCanvas); notify("步骤已加入，请补资料并连接端口。");
-      }
-      if (button.dataset.portNode) {
-        if (button.dataset.direction === "outputs") { ui.connecting = { nodeId: button.dataset.portNode, portId: button.dataset.portId }; query("#relay-connect-hint").textContent = "现在点击目标步骤的输入端口；按 Esc 取消"; }
-        else if (ui.connecting) { commit(contract.connect(ui.graph, ui.connecting.nodeId, ui.connecting.portId, button.dataset.portNode, button.dataset.portId)); notify("已按具体端口连接。旧检查已失效。"); }
-        else notify("请先点击一个输出端口，再点击输入端口。");
+      if (button.dataset.addKind) addNode(button.dataset.addKind, button.dataset.preset);
+      if (button.dataset.stage) { ui.stage = button.dataset.stage; renderInspector(); refreshStatus(); }
+      if (button.dataset.portNode && !ignorePortClick) {
+        if (button.dataset.direction === "outputs") { ui.connecting = { nodeId: button.dataset.portNode, portId: button.dataset.portId }; renderCards(); refreshStatus(); }
+        else if (ui.connecting) { commit(contract.connect(ui.graph, ui.connecting.nodeId, ui.connecting.portId, button.dataset.portNode, button.dataset.portId)); notify("已连接这两个步骤。旧检查已失效。"); }
+        else notify("请从一个输出点拖到这里，或先点击输出点。");
       }
       if (button.dataset.editPort) editPortDialog(button.dataset.portDirection, button.dataset.editPort);
       if (button.dataset.newPort) editPortDialog(button.dataset.newPort);
       if (button.dataset.removeEdge) { const next = structuredClone(ui.graph); next.edges = next.edges.filter((edge) => edge.id !== button.dataset.removeEdge); commit(next); }
-      if (button.dataset.insertTemplate !== undefined) {
-        const template = ui.templates[Number(button.dataset.insertTemplate)];
-        const next = structuredClone(ui.graph); const node = contract.instantiate(template.doc, next, template.id);
-        next.nodes.push(node); ui.selected = node.id; ui.panel = "inspector"; commit(next); requestAnimationFrame(fitCanvas); notify("已插入独立副本；连线需重新连接。");
+      if (button.dataset.insertTemplate !== undefined) insertTemplate(Number(button.dataset.insertTemplate));
+      if (button.dataset.removeAttachment !== undefined) { ui.attachments.splice(Number(button.dataset.removeAttachment), 1); ui.proposal = null; ui.saved = false; renderConversation(); refreshStatus(); }
+      if (button.dataset.simDecision) advanceSimulation(button.dataset.simDecision);
+      if (button.id === "relay-advanced-open") { ui.view = "advanced"; renderInspector(); syncPanels(); refreshStatus(); }
+      if (button.id === "relay-edit-in-chat") { query("#relay-chat-input").focus(); notify("下方已标记当前步骤，描述修改后会先给你确认。"); }
+      if (button.id === "relay-advanced-save" && saveDraft()) clearSelection();
+      if (button.id === "relay-apply-proposal") {
+        const proposal = ui.proposal;
+        const graph = editor.applyProposal(ui.graph, proposal);
+        commit(graph); log("assistant", "已应用刚才确认的修改，可在工具栏撤销。"); openPanel(null);
       }
+      if (button.id === "relay-discard-proposal") { ui.proposal = null; renderConversation(); refreshStatus(); }
       if (button.id === "relay-remove-node") {
-        openDialog("删除这个步骤？", '<p>关联连线也会移除；如果删掉必需的人工确认，原业务流程将不完整。可以撤销。</p><button id="relay-confirm-remove" class="relay-danger">确认删除</button>');
-        query("#relay-confirm-remove").onclick = () => { const next = structuredClone(ui.graph); next.nodes = next.nodes.filter((node) => node.id !== ui.selected); next.edges = next.edges.filter((edge) => edge.from !== ui.selected && edge.to !== ui.selected); ui.selected = next.nodes[0]?.id; commit(next); closeDialog(); };
+        ui.proposal = editor.propose(ui.graph, "删除这个步骤", ui.selected); renderConversation(); openPanel("conversation");
       }
       if (button.id === "relay-save-template") {
         const node = ui.graph.nodes.find((entry) => entry.id === ui.selected);
         const doc = contract.cardTemplate(node);
-        const errors = contract.validate(doc).filter((entry) => entry.sev === "err" && entry.code !== "required_port_unconnected");
-        if (errors.length) throw new Error(`请先修好这张卡：${errors[0].msg}`);
-        const templates = [...ui.templates, { id: contract.newId("local_tpl_", ui.templates.map((entry) => entry.id)), name: node.name, doc }];
-        localStorage.setItem(templateKey, JSON.stringify(templates)); ui.templates = templates; render(); notify("模板仅保存到本浏览器，没有发布到平台。");
+        const errors = contract.validate(doc).filter((issue) => issue.sev === "err" && issue.code !== "required_port_unconnected");
+        if (errors.length) throw new Error(`请先补充这一步：${errors[0].msg}`);
+        const entries = [...ui.templates, { id: contract.newId("local_tpl_", ui.templates.map((entry) => entry.id)), name: node.name, doc }];
+        localStorage.setItem(templateKey, JSON.stringify(entries)); ui.templates = entries; renderTemplates(); notify("模板已保存在本浏览器，没有发布。");
       }
-    } catch (error) { notify(error.message || "未能完成修改，请检查输入。"); }
+    } catch (error) { notify(error.message || "没有完成修改，请检查输入。"); }
   });
-
-  query("#relay-save").onclick = () => {
-    try { localStorage.setItem(storageKey, JSON.stringify(contract.snapshot(ui.graph))); ui.saved = true; refreshStatus(); notify("草案已保存在本浏览器；未上传、未运行、未发布。"); }
-    catch { ui.saved = false; refreshStatus(); notify("浏览器未允许保存，请勿关闭页面；本次修改还未持久化。"); }
-  };
-  query("#relay-undo").onclick = () => { if (!ui.history.length) return; ui.graph = ui.history.pop(); ui.saved = false; ui.report = null; ui.selected = ui.graph.nodes.some((node) => node.id === ui.selected) ? ui.selected : ui.graph.nodes[0]?.id; render(); notify("已撤销上一步修改，检查需重新执行。"); };
-  query("#relay-check").onclick = showCheck;
-  query("#relay-dialog-close").onclick = closeDialog;
-  query("#relay-migration-open").onclick = () => openDialog("迁移与能力边界", `<ul>${(ui.graph.migration?.atoms?.notes || []).map((note) => `<li>${escape(note)}</li>`).join("")}</ul><p>当前是现有本地原型的增量修改，不是原站源码导出或已部署版本。运行、真实签字和媒体工具尚未接入。</p>`);
-  query("#relay-goal-open").onclick = () => {
-    openDialog("说清这条流程的目标", `<form id="relay-goal-form">${field("流程名称", "flow_name", ui.graph.name)}${area("希望完成什么", "flow_goal", ui.graph.ui?.sourcePrompt)}<p>修改目标不会自动覆盖你的卡片。重新载入样例会先让你确认。</p><button type="submit" class="relay-primary">保留步骤并更新目标</button><button type="button" id="relay-reset-open">重新载入初始草案</button></form>`);
-    query("#relay-goal-form").onsubmit = (event) => {
-      event.preventDefault();
-      const data = new FormData(event.target);
-      const goal = String(data.get("flow_goal") || "").trim();
-      if (!goal) { notify("先写一句你希望这条流程完成什么。"); return; }
-      const next = structuredClone(ui.graph);
-      next.name = String(data.get("flow_name") || "").trim() || ui.graph.name;
-      next.ui = { ...next.ui, sourcePrompt: goal, guideStage: "review" };
-      commit(next); closeDialog(); showBreakdown();
-      notify("目标已更新；已有步骤和手工修改已保留。");
-    };
-    query("#relay-reset-open").onclick = () => {
-      openDialog("保留修改还是重新开始？", '<p>重新载入会替换当前画布；当前版本仍可用“撤销”恢复。</p><button id="relay-keep-edits">保留我的修改</button><button id="relay-reset-confirm">确认重新载入</button>');
-      query("#relay-keep-edits").onclick = closeDialog;
-      query("#relay-reset-confirm").onclick = () => { commit(structuredClone(original)); ui.selected = ui.graph.nodes[0]?.id; renderInspector(); closeDialog(); notify("已重新载入初始草案。可撤销恢复原修改。"); };
-    };
-  };
-  query("#relay-start").onclick = () => {
-    const stage = ui.graph.ui?.guideStage || "goal";
-    openPanel(null);
-    if (stage === "goal") query("#relay-goal-open").onclick();
-    else if (stage === "review") showBreakdown();
-    else showCheck();
-  };
-  query("#relay-chat-apply").onclick = () => {
-    const message = query("#relay-chat-input").value.trim();
-    if (!message) { notify("先写下要修改的内容。"); return; }
+  function insertTemplate(index, position) {
+    const template = ui.templates[index];
+    if (!template) throw new Error("这个模板已不存在，请重新选择。");
     const next = structuredClone(ui.graph);
-    if (query("#relay-chat-scope").value === "flow") next.ui = { ...next.ui, sourcePrompt: message, guideStage: "goal" };
-    else {
-      const node = next.nodes.find((entry) => entry.id === ui.selected);
-      if (!node) { notify("请先选择一个步骤。"); return; }
-      if (node.kind === "ai") node.prompts.p2 = message;
-      else if (node.kind === "sign" || node.kind === "text") node.params.content = message;
-      else { notify("这个步骤需要结构化参数，请在上方设置中修改；未猜测你的意思。"); return; }
-    }
-    commit(next); query("#relay-chat-input").value = ""; notify("已按你确认的范围写入说明；没有调用模型或自动改动连线。");
+    const node = contract.instantiate(template.doc, next, template.id);
+    Object.assign(node, position || canvasPosition()); next.nodes.push(node);
+    commit(next); selectNode(node.id); requestAnimationFrame(fitCanvas);
+    notify("已加入模板副本；没有复制旧连线或运行状态。");
+  }
+  query("#relay-dialog-close").onclick = closeDialog;
+  query("#relay-new").onclick = () => newDraft(false);
+  query("#relay-manual").onclick = () => newDraft(true);
+  query("#relay-example").onclick = () => { query("#relay-chat-input").value = "我提供主播排期、商品资料和参考图片，希望制作一条六镜30秒视频，脚本、素材和成片由真人确认后交付，不自动发布。"; query("#relay-chat-input").focus(); };
+  query("#relay-clear-scope").onclick = () => { ui.proposal = null; clearSelection(); };
+  query("#relay-history").onclick = () => openPanel(ui.panel === "conversation" ? null : "conversation");
+  query("#relay-back-business").onclick = () => { ui.view = "business"; renderInspector(); syncPanels(); refreshStatus(); };
+  query("#relay-save").onclick = saveDraft;
+  query("#relay-check").onclick = () => {
+    const issue = ui.report?.binding === editor.signature(ui.graph) && ui.report.issues.find((entry) => entry.sev === "err" && ui.graph.nodes.some((node) => node.id === entry.node_id));
+    if (issue) selectNode(issue.node_id); else showCheck();
   };
-  const zoom = (change) => { ui.zoom = Math.max(0.25, Math.min(1.5, Math.round((ui.zoom + change) * 100) / 100)); renderCards(); };
+  query("#relay-simulate").onclick = startSimulation;
+  query("#relay-cancel-job").onclick = () => { if (ui.simulation) ui.simulation = editor.cancel(ui.simulation); stopJob(); render(); notify("已取消；没有创建实际流程运行或外部任务。"); };
+  query("#relay-undo").onclick = () => { if (!ui.history.length) return; invalidate(); ui.graph = ui.history.pop(); ui.saved = false; ui.selected = null; ui.panel = null; render(); requestAnimationFrame(fitCanvas); notify("已撤销修改，请重新检查。"); };
   query("#relay-fit").onclick = () => { openPanel(null); fitCanvas(); };
+  query("#relay-zoom-in").onclick = () => { ui.zoom = Math.min(1.5, ui.zoom + 0.1); renderCards(); };
+  query("#relay-zoom-out").onclick = () => { ui.zoom = Math.max(0.25, ui.zoom - 0.1); renderCards(); };
   query("#relay-layout").onclick = () => {
     const next = structuredClone(ui.graph);
-    const stages = Object.keys(stageNames);
-    const rows = new Map();
     const heights = new Map([...document.querySelectorAll(".relay-card")].map((card) => [card.dataset.node, card.offsetHeight]));
-    let additional = 0;
-    next.nodes.forEach((node) => {
-      const stage = node.params?.businessContract?.stage;
-      const column = stages.indexOf(stage);
-      const top = rows.get(stage) || 55;
-      if (column >= 0) {
-        node.x = 30 + column * 300;
-        node.y = top;
-        rows.set(stage, top + Math.max(205, (heights.get(node.id) || 175) + 45));
-      } else {
-        node.x = 1230 + (additional % 2) * 300;
-        node.y = 55 + Math.floor(additional / 2) * 205;
-        additional += 1;
-      }
-    });
-    openPanel(null); commit(next); requestAnimationFrame(fitCanvas);
-    notify("只整理了卡片位置，配置和连线没有改动；可撤销。");
+    const columns = [0, 0, 0, 0];
+    next.nodes.forEach((node, index) => { const column = index % 4; node.x = 30 + column * 300; node.y = 40 + columns[column]; columns[column] += Math.max(205, (heights.get(node.id) || 160) + 45); });
+    commit(next); openPanel(null); requestAnimationFrame(fitCanvas); notify("只整理卡片位置，配置和连线未变，可撤销。");
   };
-  query("#relay-zoom-in").onclick = () => zoom(0.1);
-  query("#relay-zoom-out").onclick = () => zoom(-0.1);
+  query("#relay-migration-open").onclick = () => openDialog("迁移说明", `<ul>${(ui.graph.migration?.atoms?.notes || []).map((note) => `<li>${escape(note)}</li>`).join("")}</ul><p>这是本地草案，不是原站源码导出或已部署版本；原始业务五段仍保留，实际能力尚待平台核验。</p>`);
+  query("#relay-attach").onclick = () => query("#relay-attachment-input").click();
+  query("#relay-attachment-input").addEventListener("change", (event) => {
+    ui.attachments = [...(event.target.files || [])].slice(0, 8).map((file) => ({ name: file.name, size: file.size, type: file.type || "unknown", status: "metadata_only_not_uploaded" }));
+    ui.proposal = null; ui.saved = false; renderConversation(); refreshStatus();
+    notify("仅记录附件名称和大小；本轮不读取内容、不上传，也不会假装资料已验证。");
+  });
+  query("#app").addEventListener("dragstart", (event) => {
+    const resource = event.target.closest("[data-drag-kind], [data-drag-template]");
+    if (!resource) return;
+    const payload = resource.dataset.dragKind ? { kind: resource.dataset.dragKind, preset: resource.dataset.preset || "" } : { template: Number(resource.dataset.dragTemplate) };
+    event.dataTransfer.setData("application/x-eryuan-node", JSON.stringify(payload)); event.dataTransfer.effectAllowed = "copy";
+  });
+  query("#relay-scroll").addEventListener("dragover", (event) => { if ([...(event.dataTransfer.types || [])].includes("application/x-eryuan-node")) { event.preventDefault(); event.dataTransfer.dropEffect = "copy"; } });
+  query("#relay-scroll").addEventListener("drop", (event) => {
+    const raw = event.dataTransfer.getData("application/x-eryuan-node");
+    if (!raw) return; event.preventDefault();
+    try { const data = JSON.parse(raw); if (data.kind) addNode(data.kind, data.preset, canvasPosition(event)); else if (Number.isInteger(data.template)) insertTemplate(data.template, canvasPosition(event)); }
+    catch { notify("无法添加这个步骤，请从左侧已提供的列表重新选择。"); }
+  });
   query("#relay-cards").addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    const port = event.target.closest("[data-port-node]");
     const handle = event.target.closest("[data-drag-node]");
-    if (!handle || event.button !== 0) return;
-    const node = ui.graph.nodes.find((entry) => entry.id === handle.dataset.dragNode);
-    const before = structuredClone(ui.graph);
+    if (!port && !handle) return;
+    if (port && port.dataset.direction !== "outputs") return;
     const startX = event.clientX; const startY = event.clientY;
-    const originalX = node.x; const originalY = node.y;
-    const card = handle.closest(".relay-card");
+    const before = structuredClone(ui.graph);
+    const node = !port && ui.graph.nodes.find((entry) => entry.id === handle.dataset.dragNode);
+    const origin = node && { x: node.x, y: node.y };
+    const card = handle?.closest(".relay-card");
     let moved = false;
     const move = (current) => {
-      if (Math.abs(current.clientX - startX) + Math.abs(current.clientY - startY) < 5 && !moved) return;
+      if (!moved && Math.abs(current.clientX - startX) + Math.abs(current.clientY - startY) < 5) return;
+      if (!moved && port) { ui.connecting = { nodeId: port.dataset.portNode, portId: port.dataset.portId }; renderCards(); refreshStatus(); }
       moved = true;
-      node.x = Math.max(0, originalX + (current.clientX - startX) / ui.zoom);
-      node.y = Math.max(0, originalY + (current.clientY - startY) / ui.zoom);
-      card.style.left = `${node.x}px`; card.style.top = `${node.y}px`; drawConnections();
+      if (port) {
+        drawConnections();
+        const bounds = query("#relay-plane").getBoundingClientRect();
+        const start = { x: (startX - bounds.left) / ui.zoom, y: (startY - bounds.top) / ui.zoom };
+        const end = { x: (current.clientX - bounds.left) / ui.zoom, y: (current.clientY - bounds.top) / ui.zoom };
+        query("#relay-edges").innerHTML += `<path class="studio-pending-edge" d="M ${start.x} ${start.y} L ${end.x} ${end.y}"/>`;
+      } else { node.x = Math.max(0, origin.x + (current.clientX - startX) / ui.zoom); node.y = Math.max(0, origin.y + (current.clientY - startY) / ui.zoom); card.style.left = `${node.x}px`; card.style.top = `${node.y}px`; drawConnections(); }
     };
-    const finish = () => {
+    const finish = (current) => {
       window.removeEventListener("pointermove", move); window.removeEventListener("pointerup", finish); window.removeEventListener("pointercancel", finish);
-      if (moved) { ui.history.push(before); ui.saved = false; ui.report = null; refreshStatus(); renderCards(); }
+      if (!moved) return;
+      if (port) {
+        ignorePortClick = true; setTimeout(() => { ignorePortClick = false; }, 0);
+        const target = current.type !== "pointercancel" && document.elementFromPoint(current.clientX, current.clientY)?.closest("[data-port-node]");
+        try {
+          if (target?.dataset.direction === "inputs") commit(contract.connect(ui.graph, port.dataset.portNode, port.dataset.portId, target.dataset.portNode, target.dataset.portId));
+          else notify("连接已取消，请把输出点拖到一个输入点。");
+        } catch (error) { notify(error.message); }
+        ui.connecting = null; renderCards(); refreshStatus();
+      } else {
+        const next = structuredClone(ui.graph); ui.graph = before;
+        if (current.type !== "pointercancel") commit(next); else renderCards();
+      }
     };
     window.addEventListener("pointermove", move); window.addEventListener("pointerup", finish); window.addEventListener("pointercancel", finish);
   });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { ui.connecting = null; openPanel(null); query("#relay-connect-hint").textContent = "已回到画布；点击步骤编辑，或从底部继续检查"; } });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") { ui.connecting = null; if (ui.panel === "inspector") clearSelection(); else { openPanel(null); renderCards(); } } });
   window.addEventListener("resize", fitCanvas);
-  render();
-  requestAnimationFrame(fitCanvas);
+  render(); requestAnimationFrame(fitCanvas);
 }

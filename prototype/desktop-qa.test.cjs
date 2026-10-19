@@ -16,7 +16,7 @@ test("desktop QA rejects credentials, query, fragments and non-HTTP targets", ()
   for (const value of ["file:///tmp/index.html", "data:text/html,hi", "https://user:secret@example.test/", "https://example.test/?token=secret", "https://example.test/#state", "https://example.test/app"]) assert.throws(() => targetURL(value));
 });
 
-test("all eight exact assets have matching browser resource kinds", () => {
+test("all nine exact assets have matching browser resource kinds", () => {
   for (const file of assetFiles) {
     const type = file.endsWith(".html") ? "document" : file.endsWith(".css") ? "stylesheet" : "script";
     assert.equal(allowedAsset(target, request(target.href + file, "GET", type)), file);

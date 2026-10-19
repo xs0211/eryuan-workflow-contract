@@ -4,7 +4,7 @@ const path = require("node:path");
 const crypto = require("node:crypto");
 const { execFileSync } = require("node:child_process");
 
-const assetFiles = ["index.html", "styles.css", "workbench.css", "relay-ui.css", "workbench.js", "relay-model.js", "relay-ui.js", "app.js"];
+const assetFiles = ["index.html", "styles.css", "workbench.css", "relay-ui.css", "workbench.js", "relay-model.js", "relay-editor.js", "relay-ui.js", "app.js"];
 const storageKey = "eryuan-relay-desktop-draft-v1";
 const kinds = ["text", "image", "file", "group_messages", "ai", "sign", "group_send", "drive_save", "result"];
 const digest = (bytes) => crypto.createHash("sha256").update(bytes).digest("hex");
@@ -55,261 +55,300 @@ function initialAudit() {
 async function runDesktopCases(page, audit, output, persist) {
   const readSaved = () => page.evaluate((key) => JSON.parse(localStorage.getItem(key)), storageKey);
   const save = async () => { await page.locator("#relay-save").click(); return readSaved(); };
-  const close = () => page.locator("#relay-dialog-close").click();
   const closePanels = async () => {
     const closeButton = page.locator("[data-close-panel]:visible");
     if (await closeButton.count()) await closeButton.first().click();
   };
-  const selectNode = async (id) => { await closePanels(); await page.locator(`[data-select-node="${id}"]`).click(); };
+  const selectNode = async (id) => { await closePanels(); await page.locator('[data-select-node="' + id + '"]').click(); };
+  const categoryOf = (kind) => ["text", "image", "file", "group_messages"].includes(kind) ? "input" : kind === "ai" ? "ai" : kind === "sign" ? "human" : "output";
   const addKind = async (kind) => {
     await closePanels();
-    const category = ["text", "image", "file", "group_messages"].includes(kind) ? "input" : kind === "ai" ? "ai" : kind === "sign" ? "human" : "output";
-    await page.locator(`[data-open-panel="${category}"]`).click();
-    await page.locator(`[data-add-kind="${kind}"]`).click();
+    await page.locator('.relay-rail [data-open-panel="' + categoryOf(kind) + '"]').click();
+    await page.locator('[data-add-kind="' + kind + '"]:not([data-preset])').click();
+  };
+  const send = async (text) => { await page.locator("#relay-chat-input").fill(text); await page.locator("#relay-chat-send").click(); };
+  const apply = () => page.locator("#relay-apply-proposal").click();
+  const reset = async () => {
+    await closePanels(); await page.locator("#relay-new").click();
+    if (await page.locator("#relay-new-confirm").count()) await page.locator("#relay-new-confirm").click();
+  };
+  const advanced = async (id) => { await selectNode(id); await page.locator("#relay-advanced-open").click(); };
+  const revealTechnical = () => page.locator("#relay-inspector > details > summary").filter({ hasText: "模型、审核人及工具" }).click();
+  const waitForCards = (count) => page.waitForFunction((expected) => document.querySelectorAll(".relay-card").length === expected, count);
+  const composerVisible = async () => {
+    const box = await page.locator("#relay-composer").boundingBox();
+    assert(box && box.x >= 0 && box.y >= 0 && box.x + box.width <= 1440 && box.y + box.height <= 1000);
+    assert(await page.locator("#relay-chat-input").isVisible());
+    const drawer = await page.locator("#relay-inspector-panel:visible").boundingBox();
+    if (drawer) assert(drawer.y + drawer.height < box.y, "Drawer must not cover permanent composer");
+    return box;
   };
   const runCase = async (id, action) => {
     const entry = { id, status: "failed", startedAt: new Date().toISOString() };
-    audit.cases.push(entry);
-    persist();
+    audit.cases.push(entry); persist();
     entry.actual = await action();
-    entry.horizontalOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - window.innerWidth);
-    assert(entry.horizontalOverflow <= 0, `${id}: document overflows horizontally`);
-    const filename = `${id}.png`;
-    await page.screenshot({ path: path.join(output, filename), fullPage: true });
+    entry.composerBounds = await composerVisible();
+    entry.horizontalOverflow = await page.evaluate(() => Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) - innerWidth);
+    assert(entry.horizontalOverflow <= 0, id + ": horizontal overflow");
+    assert(await page.locator(".relay-floating-panel:visible").count() <= 1, "Panels must be exclusive");
+    const filename = id + ".png";
+    await page.screenshot({ path: path.join(output, filename), fullPage: false });
     audit.screenshots.push({ caseId: id, file: filename, sha256: digest(fs.readFileSync(path.join(output, filename))) });
-    entry.status = "passed";
-    entry.completedAt = new Date().toISOString();
-    persist();
+    entry.status = "passed"; entry.completedAt = new Date().toISOString(); persist();
+  };
+  const dragPort = async (from, fromPort, to, toPort) => {
+    await closePanels();
+    await page.locator('[data-node="' + from + '"]').hover();
+    const outputPort = page.locator('[data-port-node="' + from + '"][data-port-id="' + fromPort + '"][data-direction="outputs"] i');
+    const inputPort = page.locator('[data-port-node="' + to + '"][data-port-id="' + toPort + '"][data-direction="inputs"] i');
+    const start = await outputPort.boundingBox(); const end = await inputPort.boundingBox();
+    assert(start && end);
+    await page.mouse.move(start.x + start.width / 2, start.y + start.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(start.x + 15, start.y + 15, { steps: 3 });
+    await page.mouse.move(end.x + end.width / 2, end.y + end.height / 2, { steps: 15 });
+    await page.mouse.up();
   };
 
-  await runCase("01-default-canvas", async () => {
-    await page.locator(".relay-card").first().waitFor();
-    const count = await page.locator(".relay-card").count();
-    assert.equal(count, 13);
+  await runCase("01-empty-first-use", async () => {
+    await page.locator("#relay-composer").waitFor();
+    assert.equal(await page.locator(".relay-card").count(), 0);
+    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 0);
+    assert.equal(await page.locator(".relay-primary:visible").count(), 1);
+    assert.equal(await page.locator(".relay-primary:visible").textContent(), "生成流程");
+    assert(await page.locator("#relay-empty").isVisible());
+    assert.match(await page.locator("#relay-empty").textContent(), /下方描述.*资料.*结果/);
+    assert.deepEqual(await page.locator(".relay-board").boundingBox(), { x: 0, y: 0, width: 1440, height: 1000 });
+    return { empty: true, initialAction: "生成流程", humanTenSecondReview: "pending" };
+  });
+
+  await runCase("02-cancel-generation", async () => {
+    await send("我提供商品资料，希望生成一个视频并交付。");
+    await page.locator("#relay-cancel-job").click();
+    await page.waitForTimeout(750);
+    assert.equal(await page.locator(".relay-card").count(), 0);
+    assert(!(await page.locator("#relay-chat-input").isDisabled()));
+    return { cancelled: true, lateGenerationApplied: false };
+  });
+
+  await runCase("03-video-generation", async () => {
+    await page.locator("#relay-example").click();
+    await page.locator("#relay-chat-send").click();
+    await waitForCards(13); await page.locator("#relay-fit").click();
     assert.equal(await page.locator('.relay-card[data-kind="ai"]').count(), 10);
     assert.equal(await page.locator('.relay-card[data-kind="sign"]').count(), 3);
-    assert.deepEqual(await page.locator("[data-add-kind]").evaluateAll((buttons) => buttons.map((button) => button.dataset.addKind)), kinds);
-    assert(await page.locator("#relay-migration").isVisible());
-    assert(await page.getByRole("button", { name: "运行未开放", exact: true }).isDisabled());
-    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 0);
-    assert.equal(await page.locator(".relay-rail button").count(), 4);
-    assert.equal(await page.locator(".relay-primary:visible").count(), 1);
-    assert.equal(await page.locator(".relay-card.selected").count(), 0);
-    const board = await page.locator(".relay-board").boundingBox();
-    assert.deepEqual(board, { x: 0, y: 0, width: 1440, height: 1000 });
-    await page.locator("#relay-fit").click();
-    const cardBounds = await page.locator(".relay-card").evaluateAll((cards) => cards.map((card) => { const bounds = card.getBoundingClientRect(); return { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom }; }));
-    assert(cardBounds.every((bounds) => bounds.left >= 90 && bounds.right <= 1350 && bounds.top >= 150 && bounds.bottom <= 885), "Default cards must fit the central working area, clear of the rail, heading and dock");
-    const saved = await save();
-    assert.equal(saved.runnable, false);
-    assert.equal(saved.executionEvidence, "not_run");
-    assert.equal(saved.graph.edges.length, 12);
-    for (const edge of saved.graph.edges) {
-      const source = saved.graph.nodes.find((node) => node.id === edge.from);
-      const target = saved.graph.nodes.find((node) => node.id === edge.to);
-      assert(source?.outputs.some((port) => port.id === edge.fromPort));
-      assert(target?.inputs.some((port) => port.id === edge.toPort));
-    }
     await page.waitForFunction(() => document.querySelectorAll("#relay-edges path[data-edge]").length === 12);
-    return { cards: count, ai: 10, sign: 3, portBoundEdges: saved.graph.edges.length, runnable: saved.runnable, board, cardBounds, defaultFloatingPanels: 0, primaryActions: 1 };
+    assert(await page.locator("#relay-migration").isVisible());
+    assert.equal(await page.locator(".relay-primary:visible").textContent(), "检查流程");
+    const snapshot = await save();
+    assert.equal(snapshot.graph.ui.generationMode, "deterministic_mock");
+    assert.equal(snapshot.runnable, false);
+    const cardBounds = await page.locator(".relay-card").evaluateAll((cards) => cards.map((card) => { const bounds = card.getBoundingClientRect(); return { left: bounds.left, top: bounds.top, right: bounds.right, bottom: bounds.bottom }; }));
+    assert(cardBounds.every((bounds) => bounds.left >= 90 && bounds.right <= 1350 && bounds.top >= 85 && bounds.bottom < 685), "Cards must fit above composer and floating tools");
+    return { nodes: 13, ai: 10, sign: 3, edges: snapshot.graph.edges.length, cardBounds };
   });
 
-  await runCase("01a-first-operation-path", async () => {
-    const before = (await save()).graph;
-    await page.locator("#relay-start").click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "说清这条流程的目标");
-    await page.locator('[name="flow_goal"]').fill("为妆舟制作六镜视频；每次真人确认后再继续，不自动发布。");
-    await page.locator('#relay-goal-form button[type="submit"]').click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "确认这条流程怎么完成工作");
-    assert.equal(await page.locator(".relay-breakdown").count(), 4);
-    assert.equal(await page.locator(".relay-breakdown [data-resolve-node]").count(), 13);
-    await page.locator("#relay-guide-check").click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "先补齐这些内容");
-    await page.locator('[data-resolve-node="01.1-H02"]').first().click();
-    assert(await page.locator("#relay-inspector-panel").isVisible());
-    assert.equal(await page.locator(".relay-card.selected").getAttribute("data-node"), "01.1-H02");
-    assert(await page.locator('[name="gate_signer_uid"]').isVisible());
+  await runCase("04-business-drawer", async () => {
+    await selectNode("01.1-V02");
+    assert.match(await page.locator("#relay-scope-label").textContent(), /生成脚本/);
+    assert(await page.locator("#relay-edit-in-chat").isVisible());
+    assert.equal(await page.locator('#relay-inspector [name="exec_model"]').count(), 0);
+    assert.equal(await page.locator("#relay-stage-form").count(), 0);
+    const drawer = await page.locator("#relay-inspector-panel").boundingBox();
+    assert.equal(drawer.width, 400);
+    return { businessFirst: true, scope: "01.1-V02", drawer };
+  });
+
+  let beforeProposal;
+  await runCase("05-change-preview", async () => {
+    beforeProposal = (await save()).graph;
+    await send("处理说明改为只使用用户确认过的商品事实，缺少资料先提醒。");
+    assert(await page.locator("#relay-apply-proposal").isVisible());
+    assert.match(await page.locator("#relay-proposal").textContent(), /仅更新/);
+    assert.deepEqual((await save()).graph, beforeProposal);
+    return { mutationBeforeConfirmation: false, scopedNode: "01.1-V02" };
+  });
+
+  await runCase("06-apply-undo-scope", async () => {
+    await apply();
     const after = (await save()).graph;
-    assert.deepEqual(after.nodes, before.nodes);
-    assert.deepEqual(after.edges, before.edges);
-    return { path: ["goal", "breakdown", "missing-inputs", "H02-configuration"], manualGraphPreserved: true, runtime: "not_run" };
-  });
-
-  await runCase("01b-return-to-canvas", async () => {
-    const before = (await save()).graph;
-    await closePanels();
+    assert.match(after.nodes[1].prompts.p2, /用户确认/);
+    assert.deepEqual(after.nodes.filter((node) => node.id !== "01.1-V02"), beforeProposal.nodes.filter((node) => node.id !== "01.1-V02"));
+    assert.deepEqual(after.edges, beforeProposal.edges);
+    await page.locator("#relay-undo").click();
+    assert.deepEqual((await save()).graph, beforeProposal);
+    await selectNode("01.1-V02"); await page.locator("#relay-clear-scope").click();
+    assert.equal(await page.locator("#relay-scope-label").textContent(), "整个流程");
     assert.equal(await page.locator(".relay-floating-panel:visible").count(), 0);
-    assert.equal(await page.locator(".relay-card.selected").count(), 0);
-    assert(await page.locator("#relay-start").isVisible());
-    assert.deepEqual((await save()).graph, before);
-    return { closedPanels: true, graphUnchanged: true };
+    return { appliedOnlyToSelected: true, undone: true, restoredFlowScope: true };
   });
 
-  await runCase("01c-floating-tools", async () => {
-    for (const category of ["input", "ai", "human", "output"]) {
-      await page.locator(`[data-open-panel="${category}"]`).click();
-      assert(await page.locator(`#relay-category-${category}`).isVisible());
-      assert.equal(await page.locator(".relay-floating-panel:visible").count(), 1);
+  await runCase("07-five-editable-stages", async () => {
+    await advanced("01.1-V02");
+    assert.equal(await page.locator("[data-stage]").count(), 5);
+    assert.equal((await page.locator("#relay-inspector-panel").boundingBox()).width, 480);
+    for (const stage of ["input", "check", "execute", "review", "output"]) {
+      await page.locator('[data-stage="' + stage + '"]').click();
+      assert.equal(await page.locator("#relay-stage-form").count(), 1);
+      await page.locator('[name="stage_action"]').fill("QA " + stage + "：按已确认事实处理");
+      await page.locator('[name="stage_input"]').fill("用户确认的样例资料");
+      await page.locator('[name="stage_outputFormat"]').fill("JSON");
+      await page.locator('[name="stage_onFailure"]').selectOption("block");
+      await composerVisible();
     }
-    await page.locator('[data-open-panel="chat"]').click();
-    assert(await page.locator("#relay-chat-input").isVisible());
-    assert.equal(await page.locator(".relay-floating-panel:visible").count(), 1);
-    assert.match(await page.locator("#relay-chat-panel").textContent(), /不是 AI 自动改流程/);
-    return { accessibleCategories: 4, conversationVisible: true, externalAI: "not_run" };
-  });
-  await closePanels();
-
-  await runCase("02-node-configuration", async () => {
-    await selectNode("01.1-V02");
-    await page.locator('[name="prompt_p2"]').fill("只使用测试商品事实，缺资料时停止。QA 样例，不调用模型。");
-    await page.locator("#relay-node-form summary").filter({ hasText: "处理者与工具的高级设置" }).click();
-    await page.locator('[name="exec_model"]').fill("qa-model-reference-only");
-    await page.locator('#relay-node-form button[type="submit"]').click();
-    const node = (await save()).graph.nodes.find((entry) => entry.id === "01.1-V02");
-    assert.match(node.prompts.p2, /QA 样例/);
-    assert.equal(node.exec.model, "qa-model-reference-only");
-    await page.reload({ waitUntil: "load" });
-    await selectNode("01.1-V02");
-    assert.equal(await page.locator('[name="exec_model"]').inputValue(), node.exec.model);
-    assert.equal(await page.locator('[name="prompt_p2"]').inputValue(), node.prompts.p2);
-    return { restoredModelReference: node.exec.model, restoredPrompt: node.prompts.p2 };
+    const node = (await save()).graph.nodes[1];
+    for (const stage of ["input", "check", "execute", "review", "output"]) assert.match(node.params.editorStages[stage].action, /^QA/);
+    await page.locator("#relay-advanced-save").click();
+    assert.equal(await page.locator("#relay-inspector-panel").isVisible(), false);
+    return { editableStages: 5, saved: true };
   });
 
-  await runCase("03-validation-blocked", async () => {
-    await page.locator("#relay-check").click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "先补齐这些内容");
-    const errors = await page.locator("#relay-dialog .relay-issue.err").count();
-    assert(errors > 0);
-    assert.match(await page.locator("#relay-dialog-body").textContent(), /没有执行任何步骤/);
-    assert.equal(await page.locator("#relay-dialog ol li").count(), 0);
-    return { errors, downstreamResultsShown: 0 };
-  });
-  await close();
-
-  await runCase("04-system-port-locked", async () => {
-    await page.locator("#relay-inspector summary").filter({ hasText: "输入、输出与连接" }).click();
-    await page.locator('[data-edit-port="material"][data-port-direction="inputs"]').click();
+  await runCase("08-human-and-system-port-lock", async () => {
+    await advanced("01.1-H02"); await page.locator('[data-stage="execute"]').click();
+    assert.deepEqual(await page.locator('[name="stage_executor"] option').evaluateAll((items) => items.map((entry) => entry.value)), ["human"]);
+    await page.locator('[data-stage="review"]').click();
+    assert.deepEqual(await page.locator('[name="stage_executor"] option').evaluateAll((items) => items.map((entry) => entry.value)), ["approval_validator"]);
+    await page.locator("#relay-inspector summary").filter({ hasText: "输入、输出与连线" }).click();
+    await page.locator('[data-edit-port="content"]').click();
     assert.equal(await page.locator("#relay-delete-port").count(), 0);
     assert.equal(await page.locator('[name="port_type"]').count(), 0);
-    assert.equal(await page.locator('[name="port_required"]').count(), 0);
-    assert.match(await page.locator("#relay-dialog-body").textContent(), /不能删除/);
-    return { deleteControls: 0, typeControls: 0, requiredControls: 0 };
-  });
-  await close();
-
-  await runCase("05-card-template", async () => {
-    const before = await save();
-    const source = before.graph.nodes.find((node) => node.id === "01.1-V02");
-    await page.locator("#relay-save-template").click();
-    await page.locator('[data-open-panel="templates"]').click();
-    await page.locator("[data-insert-template]").last().click();
-    const after = await save();
-    const copy = after.graph.nodes.find((node) => !before.graph.nodes.some((entry) => entry.id === node.id));
-    assert(copy);
-    assert.notEqual(copy.id, source.id);
-    assert.deepEqual(copy.inputs.map((port) => port.id), source.inputs.map((port) => port.id));
-    assert.deepEqual(copy.outputs.map((port) => port.id), source.outputs.map((port) => port.id));
-    assert.equal(after.graph.edges.length, before.graph.edges.length);
-    await page.locator('[data-open-panel="templates"]').click();
-    return { newId: copy.id, originalId: source.id, inputIds: copy.inputs.map((port) => port.id), outputIds: copy.outputs.map((port) => port.id) };
-  });
-  await page.locator("#relay-undo").click();
-
-  await runCase("06-migration-notice", async () => {
-    assert(await page.locator("#relay-migration").isVisible());
-    await page.locator("#relay-migration-open").click();
-    const text = await page.locator("#relay-dialog-body").textContent();
-    assert.match(text, /不是原站源码导出或已部署版本/);
-    return { explanation: text };
-  });
-  await close();
-
-  await runCase("07-add-all-kinds", async () => {
-    const added = [];
-    for (const kind of kinds) {
-      const before = await page.locator(".relay-card").count();
-      await addKind(kind);
-      assert.equal(await page.locator(".relay-card").count(), before + 1);
-      assert.equal(await page.locator(".relay-card.selected").getAttribute("data-kind"), kind);
-      added.push(kind);
-      await page.locator("#relay-undo").click();
-      assert.equal(await page.locator(".relay-card").count(), before);
-    }
-    return { addedAndUndone: added };
+    await page.locator("#relay-dialog-close").click();
+    return { humanExecute: "human", humanReview: "approval_validator", systemDeletionOffered: false };
   });
 
-  await runCase("08-valid-structure-control", async () => {
-    for (const id of ["01.1-H02", "01.1-H05", "01.1-H10"]) {
-      await selectNode(id);
-      await page.locator('[name="gate_signer_uid"]').fill(`qa-reference-${id}`);
-      await page.locator('[name="gate_signer_name"]').fill("测试审核人引用（不代表授权）");
-      await page.locator('[name="gate_ttl_hours"]').fill("12");
-      await page.locator('#relay-node-form button[type="submit"]').click();
-    }
-    await page.locator("#relay-check").click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "连接检查完成");
-    assert.equal(await page.locator("#relay-dialog .relay-issue.err").count(), 0);
-    assert.equal(await page.locator("#relay-dialog ol li").count(), 13);
-    assert.match(await page.locator("#relay-dialog-body").textContent(), /实际运行必须等待真人/);
-    return { structureSteps: 13, humanReminderVisible: true, execution: "not_run" };
-  });
-  await close();
-
-  await runCase("09-edit-invalidates-check", async () => {
-    assert.equal(await page.locator("#relay-check").textContent(), "查看检查结果");
-    await page.locator('[name="gate_signer_uid"]').fill("");
-    assert.equal(await page.locator("#relay-check").textContent(), "检查连接");
-    assert.match(await page.locator("#relay-save-state").textContent(), /未保存/);
-    await page.locator("#relay-check").click();
-    assert.equal(await page.locator("#relay-dialog-title").textContent(), "先补齐这些内容");
-    assert.equal(await page.locator("#relay-dialog ol li").count(), 0);
-    await close();
-    const saved = await save();
-    assert.equal(saved.runnable, false);
-    assert.equal(saved.executionEvidence, "not_run");
-    return { invalidDraftSaved: true, runnable: saved.runnable };
+  await runCase("09-validation-blocked", async () => {
+    await closePanels(); await page.locator("#relay-simulate").click();
+    assert.equal(await page.locator("#relay-dialog-title").textContent(), "需要补充");
+    assert.match(await page.locator("#relay-dialog-body").textContent(), /没有执行任何步骤/);
+    assert.equal(await page.locator("[data-sim-status]").count(), 0);
+    await page.locator('[data-resolve-node="01.1-H02"]').first().click();
+    assert(await page.locator("#relay-inspector-panel").isVisible());
+    return { simulationBlockedBeforeStart: true, issueTargetsNode: true };
   });
 
-  await runCase("10-custom-port-and-connection", async () => {
-    await selectNode("01.1-V02");
-    await page.locator("#relay-inspector summary").filter({ hasText: "输入、输出与连接" }).click();
-    await page.locator('[data-new-port="inputs"]').click();
-    await page.locator('[name="port_name"]').fill("测试附加资料");
-    await page.locator('[name="port_type"][value="text"]').check();
-    await page.locator('#relay-port-form button[type="submit"]').click();
-    const before = await save();
-    const custom = before.graph.nodes.find((node) => node.id === "01.1-V02").inputs.find((port) => port.name === "测试附加资料");
-    assert(custom);
+  await runCase("10-save-reload-new-protection", async () => {
+    await closePanels(); const before = await save();
+    await page.reload({ waitUntil: "load" }); await waitForCards(13);
+    assert.deepEqual((await save()).graph, before.graph);
+    assert.equal((await readSaved()).executionEvidence, "not_run");
+    await page.locator("#relay-new").click();
+    assert(await page.locator("#relay-keep-edits").isVisible());
+    await page.locator("#relay-keep-edits").click();
+    assert.deepEqual((await save()).graph, before.graph);
+    return { fullSnapshotRestored: true, newDraftRequiresChoice: true };
+  });
+
+  await runCase("11-manual-drag-and-move", async () => {
+    await reset(); await page.locator("#relay-manual").click();
+    const dragResource = async (kind, point) => {
+      await closePanels();
+      await page.locator('.relay-rail [data-open-panel="' + categoryOf(kind) + '"]').click();
+      await page.locator('[data-drag-kind="' + kind + '"]:not([data-preset])').dragTo(page.locator("#relay-scroll"), { targetPosition: point });
+    };
+    await dragResource("text", { x: 430, y: 230 });
+    await dragResource("ai", { x: 900, y: 420 });
+    const before = (await save()).graph;
+    assert.equal(before.nodes.length, 2);
+    await closePanels();
+    const handle = page.locator('[data-drag-node="' + before.nodes[0].id + '"]');
+    const box = await handle.boundingBox();
+    await page.mouse.move(box.x + 30, box.y + 10); await page.mouse.down();
+    await page.mouse.move(box.x + 130, box.y + 75, { steps: 10 }); await page.mouse.up();
+    const after = (await save()).graph;
+    assert.notEqual(after.nodes[0].x, before.nodes[0].x);
+    assert.deepEqual(after.edges, before.edges);
+    return { resourceDragAdded: 2, nodeMoveChangedPosition: true };
+  });
+
+  await runCase("12-port-drag-type-rejection", async () => {
+    const before = (await save()).graph;
+    const text = before.nodes.find((node) => node.kind === "text");
+    const ai = before.nodes.find((node) => node.kind === "ai");
+    await dragPort(text.id, "out", ai.id, "material");
+    const linked = (await save()).graph;
+    assert(linked.edges.some((edge) => edge.from === text.id && edge.fromPort === "out" && edge.to === ai.id && edge.toPort === "material"));
     await addKind("image");
-    const imageId = await page.locator(".relay-card.selected").getAttribute("data-node");
-    await closePanels();
-    await page.locator(`[data-port-node="${imageId}"][data-port-id="out"][data-direction="outputs"]`).click();
-    await page.locator(`[data-port-node="01.1-V02"][data-port-id="${custom.id}"][data-direction="inputs"]`).click();
+    const withImage = (await save()).graph;
+    await page.locator("#relay-layout").click(); await page.locator("#relay-fit").click();
+    await dragPort(withImage.nodes.at(-1).id, "out", ai.id, "material");
     assert.match(await page.locator("#relay-notice").textContent(), /类型不匹配/);
-    assert.equal((await save()).graph.edges.length, before.graph.edges.length);
-    await page.locator("#relay-undo").click();
-    await addKind("text");
-    const textId = await page.locator(".relay-card.selected").getAttribute("data-node");
-    await closePanels();
-    await page.locator(`[data-port-node="${textId}"][data-port-id="out"][data-direction="outputs"]`).click();
-    await page.locator(`[data-port-node="01.1-V02"][data-port-id="${custom.id}"][data-direction="inputs"]`).click();
-    const connected = await save();
-    const edge = connected.graph.edges.find((entry) => entry.from === textId && entry.to === "01.1-V02" && entry.toPort === custom.id);
-    assert.equal(edge?.fromPort, "out");
-    assert.equal(connected.graph.edges.length, before.graph.edges.length + 1);
-    await selectNode("01.1-V02");
-    await page.locator("#relay-inspector summary").filter({ hasText: "输入、输出与连接" }).click();
-    await page.locator(`[data-edit-port="${custom.id}"][data-port-direction="inputs"]`).click();
-    await page.locator("#relay-delete-port").click();
-    const deleted = await save();
-    assert(!deleted.graph.nodes.find((node) => node.id === "01.1-V02").inputs.some((port) => port.id === custom.id));
-    assert(!deleted.graph.edges.some((entry) => entry.id === edge.id));
-    return { customPortId: custom.id, rejectedImageConnection: true, validTextEdge: edge, removedWithPort: true };
+    assert.equal((await save()).graph.edges.length, linked.edges.length);
+    return { portBoundConnection: true, incompatibleImageRejected: true };
+  });
+
+  await runCase("13-nine-kinds-and-template", async () => {
+    const existing = new Set((await save()).graph.nodes.map((node) => node.kind));
+    for (const kind of kinds.filter((kind) => !existing.has(kind))) await addKind(kind);
+    const graph = (await save()).graph;
+    assert.deepEqual([...new Set(graph.nodes.map((node) => node.kind))].sort(), [...kinds].sort());
+    const text = graph.nodes.find((node) => node.kind === "text");
+    await page.locator("#relay-layout").click(); await page.locator("#relay-fit").click();
+    await selectNode(text.id); await page.locator("#relay-save-template").click();
+    await closePanels(); await page.locator('[data-open-panel="templates"]').click();
+    await page.locator('[data-insert-template="0"]').click();
+    const inserted = (await save()).graph.nodes.at(-1);
+    assert.notEqual(inserted.id, text.id);
+    assert.equal(inserted.outputs[0].id, "out");
+    assert.equal(inserted.outputs[0].locked, true);
+    return { kinds: 9, stableTemplateSystemPort: inserted.outputs[0].id };
+  });
+
+  await runCase("14-generic-flow-and-synthetic-human", async () => {
+    await reset();
+    await send("我提供会议记录，希望整理成文字纪要并输出行动清单。");
+    await waitForCards(4);
+    await selectNode("review"); await send("审核人：qa-reviewer-reference-only"); await apply();
+    await closePanels(); await page.locator("#relay-check").click();
+    assert.equal(await page.locator("#relay-dialog-title").textContent(), "可以继续");
+    await page.locator("#relay-dialog-close").click();
+    await page.locator("#relay-simulate").click();
+    await page.locator('[data-sim-decision="approved"]').waitFor();
+    assert.equal(await page.locator('[data-sim-node="delivery"]').getAttribute("data-sim-status"), "pending");
+    await page.locator('[data-sim-decision="approved"]').click();
+    await page.waitForFunction(() => document.querySelector("#relay-simulation-results").textContent.includes("模拟完成"));
+    assert.equal(await page.locator('[data-sim-status="passed"]').count(), 4);
+    const snapshot = await save();
+    assert.equal(snapshot.executionEvidence, "not_run");
+    assert.equal(snapshot.graph.nodes[2].gate.humanDecision, undefined);
+    return { syntheticSteps: 4, explicitMockHuman: true, realDecisionWritten: false };
+  });
+
+  await runCase("15-failure-stops-downstream", async () => {
+    await advanced("process"); await revealTechnical();
+    await page.locator('[name="simulation_scenario"]').selectOption("failure");
+    await page.locator("#relay-advanced-save").click();
+    await page.locator("#relay-simulate").click();
+    await page.locator('[data-sim-node="process"][data-sim-status="failed"]').waitFor();
+    assert.equal(await page.locator('[data-sim-node="review"]').getAttribute("data-sim-status"), "not_started");
+    assert.equal(await page.locator('[data-sim-node="delivery"]').getAttribute("data-sim-status"), "not_started");
+    assert.match(await page.locator('[data-sim-node="process"]').textContent(), /流程停在这里/);
+    return { failedAt: "process", downstreamNotStarted: ["review", "delivery"] };
+  });
+
+  await runCase("16-simulation-cancel", async () => {
+    await closePanels(); await page.locator("#relay-simulate").click();
+    await page.locator("#relay-cancel-job").click();
+    await page.waitForTimeout(800);
+    assert.match(await page.locator("#relay-simulation-results").textContent(), /已取消/);
+    assert.equal(await page.locator('[data-sim-status="passed"]').count(), 0);
+    return { cancellationPersistedInView: true, lateSuccesses: 0 };
+  });
+
+  await runCase("17-attachment-metadata-and-flow-scope", async () => {
+    await closePanels(); await page.locator("#relay-clear-scope").isVisible().then(async (visible) => { if (visible) await page.locator("#relay-clear-scope").click(); });
+    await page.locator("#relay-attachment-input").setInputFiles({ name: "synthetic-notes.txt", mimeType: "text/plain", buffer: Buffer.from("synthetic fixture, not customer data") });
+    assert.match(await page.locator("#relay-attachments").textContent(), /仅记录名称/);
+    await send("名称改为会议纪要草稿"); await apply();
+    const snapshot = await save();
+    assert.equal(snapshot.graph.name, "会议纪要草稿");
+    assert.equal(snapshot.attachments[0].status, "metadata_only_not_uploaded");
+    assert.equal(snapshot.graph.ui.referenceAttachments[0].name, "synthetic-notes.txt");
+    return { metadataOnly: true, wholeFlowScope: true, uploaded: false };
   });
 }
 
 async function main() {
-  const destination = path.join(__dirname, "qa", "desktop");
+  const destination = path.join(__dirname, "qa", "workflow-dialog-v1.0");
   fs.mkdirSync(destination, { recursive: true });
   const audit = initialAudit();
   const persist = () => fs.writeFileSync(path.join(destination, "audit.json"), JSON.stringify(audit, null, 2) + "\n");
